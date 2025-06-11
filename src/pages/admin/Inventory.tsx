@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import Header from '../../components/Header';
 import { mockVehicles } from '../../data/mockData';
 import { Vehicle } from '../../types';
@@ -65,20 +67,21 @@ const AdminInventory = () => {
       color: vehicle?.color || '',
       descripcion: vehicle?.descripcion || '',
       imagen: vehicle?.imagen || '',
+      enSubasta: vehicle?.enSubasta || false,
+      estadoGeneral: vehicle?.estadoGeneral || 'Bueno',
     });
 
     const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
-      // TODO: Save vehicle logic
       console.log('Saving vehicle:', formData);
       onClose();
     };
 
     return (
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4 max-h-[70vh] overflow-y-auto">
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Marca</label>
+            <Label className="block text-sm font-medium mb-1">Marca</Label>
             <Input 
               value={formData.marca}
               onChange={(e) => setFormData({...formData, marca: e.target.value})}
@@ -86,7 +89,7 @@ const AdminInventory = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Modelo</label>
+            <Label className="block text-sm font-medium mb-1">Modelo</Label>
             <Input 
               value={formData.modelo}
               onChange={(e) => setFormData({...formData, modelo: e.target.value})}
@@ -97,7 +100,7 @@ const AdminInventory = () => {
 
         <div className="grid grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Año</label>
+            <Label className="block text-sm font-medium mb-1">Año</Label>
             <Input 
               type="number"
               value={formData.año}
@@ -106,7 +109,7 @@ const AdminInventory = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Precio</label>
+            <Label className="block text-sm font-medium mb-1">Precio</Label>
             <Input 
               type="number"
               value={formData.precio}
@@ -115,7 +118,7 @@ const AdminInventory = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Kilometraje</label>
+            <Label className="block text-sm font-medium mb-1">Kilometraje</Label>
             <Input 
               type="number"
               value={formData.kilometraje}
@@ -127,7 +130,7 @@ const AdminInventory = () => {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Transmisión</label>
+            <Label className="block text-sm font-medium mb-1">Transmisión</Label>
             <Select value={formData.transmision} onValueChange={(value) => setFormData({...formData, transmision: value as any})}>
               <SelectTrigger>
                 <SelectValue />
@@ -139,7 +142,7 @@ const AdminInventory = () => {
             </Select>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Combustible</label>
+            <Label className="block text-sm font-medium mb-1">Combustible</Label>
             <Select value={formData.combustible} onValueChange={(value) => setFormData({...formData, combustible: value as any})}>
               <SelectTrigger>
                 <SelectValue />
@@ -154,17 +157,33 @@ const AdminInventory = () => {
           </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-1">Color</label>
-          <Input 
-            value={formData.color}
-            onChange={(e) => setFormData({...formData, color: e.target.value})}
-            required
-          />
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label className="block text-sm font-medium mb-1">Color</Label>
+            <Input 
+              value={formData.color}
+              onChange={(e) => setFormData({...formData, color: e.target.value})}
+              required
+            />
+          </div>
+          <div>
+            <Label className="block text-sm font-medium mb-1">Estado General</Label>
+            <Select value={formData.estadoGeneral} onValueChange={(value) => setFormData({...formData, estadoGeneral: value as any})}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Excelente">Excelente</SelectItem>
+                <SelectItem value="Muy Bueno">Muy Bueno</SelectItem>
+                <SelectItem value="Bueno">Bueno</SelectItem>
+                <SelectItem value="Regular">Regular</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1">URL de Imagen</label>
+          <Label className="block text-sm font-medium mb-1">URL de Imagen</Label>
           <Input 
             value={formData.imagen}
             onChange={(e) => setFormData({...formData, imagen: e.target.value})}
@@ -173,13 +192,32 @@ const AdminInventory = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1">Descripción</label>
+          <Label className="block text-sm font-medium mb-1">Descripción</Label>
           <textarea 
             className="w-full p-2 border rounded-md"
             rows={3}
             value={formData.descripcion}
             onChange={(e) => setFormData({...formData, descripcion: e.target.value})}
           />
+        </div>
+
+        <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
+          <Switch 
+            id="enSubasta"
+            checked={formData.enSubasta}
+            onCheckedChange={(checked) => setFormData({...formData, enSubasta: checked})}
+          />
+          <div className="flex-1">
+            <Label htmlFor="enSubasta" className="text-sm font-medium cursor-pointer">
+              {formData.enSubasta ? 'Enviar a Subasta' : 'Venta Directa'}
+            </Label>
+            <p className="text-xs text-muted-foreground">
+              {formData.enSubasta 
+                ? 'Este vehículo estará disponible para subastas públicas' 
+                : 'Este vehículo estará disponible para venta directa'
+              }
+            </p>
+          </div>
         </div>
 
         <div className="flex space-x-2 pt-4">
@@ -376,6 +414,7 @@ const AdminInventory = () => {
                 <div><strong>Color:</strong> {selectedVehicle.color}</div>
                 <div><strong>Transmisión:</strong> {selectedVehicle.transmision}</div>
                 <div><strong>Combustible:</strong> {selectedVehicle.combustible}</div>
+                <div><strong>Estado:</strong> {selectedVehicle.estadoGeneral}</div>
               </div>
               <div>
                 <strong>Descripción:</strong>

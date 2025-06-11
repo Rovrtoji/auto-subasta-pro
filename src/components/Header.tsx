@@ -1,93 +1,197 @@
 
-import { Car, Menu, User, MessageCircle, Gavel } from 'lucide-react';
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Car, Menu, X, Gavel, ShoppingCart, User, LogIn, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
 const Header = () => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const navigation = [
-    { name: 'Inicio', href: '/', icon: Car },
-    { name: 'Subastas', href: '/subastas', icon: Gavel },
-    { name: 'Contacto', href: '/contacto', icon: MessageCircle },
-  ];
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-between">
-        {/* Logo */}
-        <div className="flex items-center space-x-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-r from-automotive-blue to-automotive-gold">
-            <Car className="h-6 w-6 text-white" />
+    <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+      <div className="container mx-auto px-4">
+        <div className="flex items-center justify-between h-16">
+          {/* Logo */}
+          <Link to="/" className="flex items-center space-x-2">
+            <div className="w-10 h-10 bg-automotive-gradient rounded-lg flex items-center justify-center">
+              <Car className="h-6 w-6 text-white" />
+            </div>
+            <span className="text-xl font-bold text-automotive-carbon">AutoElite</span>
+          </Link>
+
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center space-x-8">
+            <Link 
+              to="/" 
+              className="text-gray-700 hover:text-automotive-blue transition-colors font-medium"
+            >
+              Inicio
+            </Link>
+            
+            <div className="relative group">
+              <button className="flex items-center space-x-1 text-gray-700 hover:text-automotive-blue transition-colors font-medium">
+                <ShoppingCart className="h-4 w-4" />
+                <span>Venta Directa</span>
+              </button>
+              <div className="absolute top-full left-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                <Link 
+                  to="/venta-directa" 
+                  className="block px-4 py-2 text-gray-700 hover:bg-gray-50 hover:text-automotive-blue transition-colors"
+                >
+                  Ver Todos los Vehículos
+                </Link>
+                <Link 
+                  to="/venta-directa?filter=sedan" 
+                  className="block px-4 py-2 text-gray-700 hover:bg-gray-50 hover:text-automotive-blue transition-colors"
+                >
+                  Sedán
+                </Link>
+                <Link 
+                  to="/venta-directa?filter=suv" 
+                  className="block px-4 py-2 text-gray-700 hover:bg-gray-50 hover:text-automotive-blue transition-colors"
+                >
+                  SUV
+                </Link>
+                <Link 
+                  to="/venta-directa?filter=pickup" 
+                  className="block px-4 py-2 text-gray-700 hover:bg-gray-50 hover:text-automotive-blue transition-colors"
+                >
+                  Pick-up
+                </Link>
+              </div>
+            </div>
+            
+            <Link 
+              to="/subastas" 
+              className="flex items-center space-x-1 text-gray-700 hover:text-automotive-blue transition-colors font-medium"
+            >
+              <Gavel className="h-4 w-4" />
+              <span>Subastas</span>
+            </Link>
+            
+            <Link 
+              to="/contacto" 
+              className="text-gray-700 hover:text-automotive-blue transition-colors font-medium"
+            >
+              Contacto
+            </Link>
+          </nav>
+
+          {/* Desktop Auth Buttons */}
+          <div className="hidden md:flex items-center space-x-3">
+            <Link to="/login">
+              <Button variant="outline" size="sm" className="flex items-center space-x-1">
+                <LogIn className="h-4 w-4" />
+                <span>Iniciar Sesión</span>
+              </Button>
+            </Link>
+            <Link to="/register">
+              <Button size="sm" className="btn-premium flex items-center space-x-1">
+                <UserPlus className="h-4 w-4" />
+                <span>Registrarse</span>
+              </Button>
+            </Link>
           </div>
-          <div className="hidden font-bold sm:block">
-            <span className="text-automotive-blue">Auto</span>
-            <span className="text-automotive-gold">Subasta</span>
-            <span className="text-automotive-carbon">Pro</span>
-          </div>
+
+          {/* Mobile Menu Button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="md:hidden"
+            onClick={toggleMenu}
+          >
+            {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </Button>
         </div>
 
-        {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center space-x-6">
-          {navigation.map((item) => (
-            <a
-              key={item.name}
-              href={item.href}
-              className="flex items-center space-x-2 text-sm font-medium text-foreground/80 transition-colors hover:text-automotive-blue hover:scale-105 transform duration-200"
-            >
-              <item.icon className="h-4 w-4" />
-              <span>{item.name}</span>
-            </a>
-          ))}
-        </nav>
-
-        {/* Actions */}
-        <div className="flex items-center space-x-4">
-          <Button variant="outline" size="sm" className="hidden sm:flex items-center space-x-2">
-            <MessageCircle className="h-4 w-4" />
-            <span>Chat</span>
-          </Button>
-          
-          <Button size="sm" className="btn-premium">
-            <User className="h-4 w-4 mr-2" />
-            Ingresar
-          </Button>
-
-          {/* Mobile Menu */}
-          <Sheet open={isOpen} onOpenChange={setIsOpen}>
-            <SheetTrigger asChild className="md:hidden">
-              <Button variant="ghost" size="sm">
-                <Menu className="h-5 w-5" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right" className="w-80">
-              <div className="flex flex-col space-y-4 mt-6">
-                {navigation.map((item) => (
-                  <a
-                    key={item.name}
-                    href={item.href}
-                    onClick={() => setIsOpen(false)}
-                    className="flex items-center space-x-3 text-lg font-medium p-3 rounded-lg hover:bg-accent transition-colors"
+        {/* Mobile Navigation */}
+        {isMenuOpen && (
+          <div className="md:hidden py-4 border-t border-gray-200">
+            <nav className="flex flex-col space-y-4">
+              <Link 
+                to="/" 
+                className="text-gray-700 hover:text-automotive-blue transition-colors font-medium"
+                onClick={toggleMenu}
+              >
+                Inicio
+              </Link>
+              
+              <div className="space-y-2">
+                <div className="flex items-center space-x-1 text-gray-700 font-medium">
+                  <ShoppingCart className="h-4 w-4" />
+                  <span>Venta Directa</span>
+                </div>
+                <div className="pl-6 space-y-2">
+                  <Link 
+                    to="/venta-directa" 
+                    className="block text-gray-600 hover:text-automotive-blue transition-colors"
+                    onClick={toggleMenu}
                   >
-                    <item.icon className="h-5 w-5" />
-                    <span>{item.name}</span>
-                  </a>
-                ))}
-                <div className="border-t pt-4 space-y-2">
-                  <Button className="w-full btn-premium">
-                    <User className="h-4 w-4 mr-2" />
-                    Ingresar
-                  </Button>
-                  <Button variant="outline" className="w-full">
-                    <MessageCircle className="h-4 w-4 mr-2" />
-                    Chat
-                  </Button>
+                    Ver Todos
+                  </Link>
+                  <Link 
+                    to="/venta-directa?filter=sedan" 
+                    className="block text-gray-600 hover:text-automotive-blue transition-colors"
+                    onClick={toggleMenu}
+                  >
+                    Sedán
+                  </Link>
+                  <Link 
+                    to="/venta-directa?filter=suv" 
+                    className="block text-gray-600 hover:text-automotive-blue transition-colors"
+                    onClick={toggleMenu}
+                  >
+                    SUV
+                  </Link>
+                  <Link 
+                    to="/venta-directa?filter=pickup" 
+                    className="block text-gray-600 hover:text-automotive-blue transition-colors"
+                    onClick={toggleMenu}
+                  >
+                    Pick-up
+                  </Link>
                 </div>
               </div>
-            </SheetContent>
-          </Sheet>
-        </div>
+              
+              <Link 
+                to="/subastas" 
+                className="flex items-center space-x-1 text-gray-700 hover:text-automotive-blue transition-colors font-medium"
+                onClick={toggleMenu}
+              >
+                <Gavel className="h-4 w-4" />
+                <span>Subastas</span>
+              </Link>
+              
+              <Link 
+                to="/contacto" 
+                className="text-gray-700 hover:text-automotive-blue transition-colors font-medium"
+                onClick={toggleMenu}
+              >
+                Contacto
+              </Link>
+
+              {/* Mobile Auth Buttons */}
+              <div className="pt-4 border-t border-gray-200 space-y-2">
+                <Link to="/login" onClick={toggleMenu}>
+                  <Button variant="outline" size="sm" className="w-full flex items-center justify-center space-x-1">
+                    <LogIn className="h-4 w-4" />
+                    <span>Iniciar Sesión</span>
+                  </Button>
+                </Link>
+                <Link to="/register" onClick={toggleMenu}>
+                  <Button size="sm" className="w-full btn-premium flex items-center justify-center space-x-1">
+                    <UserPlus className="h-4 w-4" />
+                    <span>Registrarse</span>
+                  </Button>
+                </Link>
+              </div>
+            </nav>
+          </div>
+        )}
       </div>
     </header>
   );
