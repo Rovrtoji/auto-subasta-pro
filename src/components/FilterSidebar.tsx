@@ -99,14 +99,14 @@ const FilterSidebar = ({ filters, onFiltersChange, onClearFilters, isOpen, onClo
               <Car className="h-4 w-4" />
               <span>Marca</span>
             </Label>
-            <Select value={filters.marca || ''} onValueChange={(value) => 
-              onFiltersChange({ ...filters, marca: value || undefined })
+            <Select value={filters.marca || 'all'} onValueChange={(value) => 
+              onFiltersChange({ ...filters, marca: value === 'all' ? undefined : value })
             }>
               <SelectTrigger>
                 <SelectValue placeholder="Todas las marcas" />
               </SelectTrigger>
               <SelectContent className="bg-background border border-border z-50">
-                <SelectItem value="">Todas las marcas</SelectItem>
+                <SelectItem value="all">Todas las marcas</SelectItem>
                 {marcas.map((marca) => (
                   <SelectItem key={marca} value={marca}>{marca}</SelectItem>
                 ))}
@@ -182,14 +182,14 @@ const FilterSidebar = ({ filters, onFiltersChange, onClearFilters, isOpen, onClo
               <Settings className="h-4 w-4" />
               <span>Transmisión</span>
             </Label>
-            <Select value={filters.transmision || ''} onValueChange={(value) => 
-              onFiltersChange({ ...filters, transmision: value || undefined })
+            <Select value={filters.transmision || 'all'} onValueChange={(value) => 
+              onFiltersChange({ ...filters, transmision: value === 'all' ? undefined : value })
             }>
               <SelectTrigger>
                 <SelectValue placeholder="Cualquiera" />
               </SelectTrigger>
               <SelectContent className="bg-background border border-border z-50">
-                <SelectItem value="">Cualquiera</SelectItem>
+                <SelectItem value="all">Cualquiera</SelectItem>
                 <SelectItem value="Manual">Manual</SelectItem>
                 <SelectItem value="Automática">Automática</SelectItem>
               </SelectContent>
@@ -202,14 +202,14 @@ const FilterSidebar = ({ filters, onFiltersChange, onClearFilters, isOpen, onClo
               <Fuel className="h-4 w-4" />
               <span>Combustible</span>
             </Label>
-            <Select value={filters.combustible || ''} onValueChange={(value) => 
-              onFiltersChange({ ...filters, combustible: value || undefined })
+            <Select value={filters.combustible || 'all'} onValueChange={(value) => 
+              onFiltersChange({ ...filters, combustible: value === 'all' ? undefined : value })
             }>
               <SelectTrigger>
                 <SelectValue placeholder="Cualquiera" />
               </SelectTrigger>
               <SelectContent className="bg-background border border-border z-50">
-                <SelectItem value="">Cualquiera</SelectItem>
+                <SelectItem value="all">Cualquiera</SelectItem>
                 <SelectItem value="Gasolina">Gasolina</SelectItem>
                 <SelectItem value="Diesel">Diesel</SelectItem>
                 <SelectItem value="Híbrido">Híbrido</SelectItem>

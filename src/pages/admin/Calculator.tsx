@@ -122,11 +122,12 @@ const AdminCalculator = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="marca">Marca</Label>
-                  <Select value={formData.marca} onValueChange={(value) => setFormData({...formData, marca: value})}>
+                  <Select value={formData.marca || 'none'} onValueChange={(value) => setFormData({...formData, marca: value === 'none' ? '' : value})}>
                     <SelectTrigger className="mt-1">
                       <SelectValue placeholder="Seleccionar marca" />
                     </SelectTrigger>
                     <SelectContent className="bg-background border border-border z-50">
+                      <SelectItem value="none">Seleccionar marca</SelectItem>
                       {marcas.map((marca) => (
                         <SelectItem key={marca} value={marca}>{marca}</SelectItem>
                       ))}
