@@ -1,6 +1,7 @@
 
-import { MessageCircle, Users, Clock } from 'lucide-react';
+import { MessageCircle, Users, Clock, ArrowLeft } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import Header from '../../components/Header';
 import ChatCenter from '../../components/ChatCenter';
 
@@ -13,12 +14,21 @@ const AdminChatCenter = () => {
       <div className="bg-automotive-gradient text-white py-8">
         <div className="container">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold flex items-center gap-3">
-                <MessageCircle className="h-8 w-8" />
-                Centro de Chat
-              </h1>
-              <p className="text-gray-200 mt-2">Atiende a los clientes en tiempo real</p>
+            <div className="flex items-center space-x-4">
+              <Button
+                onClick={() => window.location.href = '/admin'}
+                variant="ghost"
+                className="text-white hover:bg-white/20 p-2"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <div>
+                <h1 className="text-3xl font-bold flex items-center gap-3">
+                  <MessageCircle className="h-8 w-8" />
+                  Centro de Chat
+                </h1>
+                <p className="text-gray-200 mt-2">Atiende a los clientes en tiempo real</p>
+              </div>
             </div>
             <div className="text-right">
               <div className="flex items-center gap-4">
