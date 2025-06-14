@@ -223,11 +223,7 @@ const Index = () => {
                         />
                         {auction && (
                           <AuctionTimer
-                            endDate={auction.fechaFin}
-                            currentPrice={auction.precioActual}
-                            participants={auction.participantes.length}
-                            vehicleId={vehicle.id}
-                            onBid={() => handleBidOnAuction(vehicle.id)}
+                            endTime={auction.fechaFin}
                           />
                         )}
                       </div>

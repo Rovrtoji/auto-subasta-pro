@@ -113,7 +113,6 @@ const Header = () => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                     <Avatar className="h-10 w-10">
-                      <AvatarImage src={profile?.avatar_url} alt={profile?.nombre} />
                       <AvatarFallback className="bg-automotive-blue text-white">
                         {getUserInitials(profile?.nombre || user.email || 'U')}
                       </AvatarFallback>
@@ -257,7 +256,6 @@ const Header = () => {
                   <>
                     <div className="flex items-center space-x-3 px-2 py-2">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src={profile?.avatar_url} alt={profile?.nombre} />
                         <AvatarFallback className="bg-automotive-blue text-white text-sm">
                           {getUserInitials(profile?.nombre || user.email || 'U')}
                         </AvatarFallback>
