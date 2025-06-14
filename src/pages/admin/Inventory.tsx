@@ -1,6 +1,5 @@
-
 import { useState } from 'react';
-import { useVehicles, useCreateVehicle, useUpdateVehicle } from '@/hooks/useVehicles';
+import { useVehicles, useCreateVehicle, useUpdateVehicle, useInventoryStats } from '@/hooks/useVehicles';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,12 +10,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Edit, Upload, X } from 'lucide-react';
+import { Plus, Edit, Upload, X, BarChart3 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
 const AdminInventory = () => {
   const { data: vehicles = [], isLoading } = useVehicles();
+  const { data: stats } = useInventoryStats();
   const { profile } = useAuth();
   const createVehicle = useCreateVehicle();
   const updateVehicle = useUpdateVehicle();
@@ -54,11 +54,14 @@ const AdminInventory = () => {
       if (editingVehicle) {
         await updateVehicle.mutateAsync({
           id: editingVehicle.id,
-          updates: vehicleData
+          updates: { ...vehicleData, imageUrls: imageUrls.filter(url => url.trim() !== '') }
         });
         toast.success('Vehículo actualizado exitosamente');
       } else {
-        await createVehicle.mutateAsync(vehicleData);
+        await createVehicle.mutateAsync({
+          ...vehicleData,
+          imageUrls: imageUrls.filter(url => url.trim() !== '')
+        });
         toast.success('Vehículo creado exitosamente');
       }
       setIsDialogOpen(false);
@@ -141,6 +144,61 @@ const AdminInventory = () => {
 
   return (
     <div className="container mx-auto p-6">
+      {/* Estadísticas del Inventario */}
+      {stats && (
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-2">
+                <BarChart3 className="h-4 w-4 text-blue-600" />
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Total Vehículos</p>
+                  <p className="text-2xl font-bold">{stats.total_vehiculos}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-4">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Disponibles</p>
+                <p className="text-2xl font-bold text-green-600">{stats.vehiculos_disponibles}</p>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-4">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Apartados</p>
+                <p className="text-2xl font-bold text-red-600">{stats.vehiculos_apartados}</p>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-4">
+              <div>
+                <p className="text-sm font-medium text-gray-600">En Subasta</p>
+                <p className="text-2xl font-bold text-purple-600">{stats.vehiculos_en_subasta}</p>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-4">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Valor Total</p>
+                <p className="text-lg font-bold text-blue-600">
+                  ${Number(stats.valor_total_inventario).toLocaleString()}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Gestión de Inventario</h1>
         

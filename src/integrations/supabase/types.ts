@@ -221,6 +221,82 @@ export type Database = {
           },
         ]
       }
+      vehicle_images: {
+        Row: {
+          alt_text: string | null
+          created_at: string
+          id: string
+          is_primary: boolean
+          orden: number | null
+          url: string
+          vehicle_id: string
+        }
+        Insert: {
+          alt_text?: string | null
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          orden?: number | null
+          url: string
+          vehicle_id: string
+        }
+        Update: {
+          alt_text?: string | null
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          orden?: number | null
+          url?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_images_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vehicle_status_history: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          estado_anterior: string | null
+          estado_nuevo: string
+          id: string
+          motivo: string | null
+          vehicle_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          estado_anterior?: string | null
+          estado_nuevo: string
+          id?: string
+          motivo?: string | null
+          vehicle_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          estado_anterior?: string | null
+          estado_nuevo?: string
+          id?: string
+          motivo?: string | null
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_status_history_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vehicles: {
         Row: {
           año: number
@@ -295,6 +371,32 @@ export type Database = {
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_inventory_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          total_vehiculos: number
+          vehiculos_disponibles: number
+          vehiculos_apartados: number
+          vehiculos_en_subasta: number
+          valor_total_inventario: number
+        }[]
+      }
+      manage_vehicle_images: {
+        Args: {
+          p_vehicle_id: string
+          p_images: string[]
+          p_primary_image?: string
+        }
+        Returns: undefined
+      }
+      update_vehicle_status: {
+        Args: {
+          p_vehicle_id: string
+          p_nuevo_estado: string
+          p_motivo?: string
+        }
+        Returns: undefined
       }
     }
     Enums: {
