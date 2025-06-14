@@ -9,7 +9,284 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      appointments: {
+        Row: {
+          cliente_email: string
+          cliente_nombre: string
+          cliente_telefono: string
+          created_at: string
+          estado: string
+          fecha: string
+          hora: string
+          id: string
+          mensaje: string | null
+          updated_at: string
+          vehicle_id: string
+        }
+        Insert: {
+          cliente_email: string
+          cliente_nombre: string
+          cliente_telefono: string
+          created_at?: string
+          estado?: string
+          fecha: string
+          hora: string
+          id?: string
+          mensaje?: string | null
+          updated_at?: string
+          vehicle_id: string
+        }
+        Update: {
+          cliente_email?: string
+          cliente_nombre?: string
+          cliente_telefono?: string
+          created_at?: string
+          estado?: string
+          fecha?: string
+          hora?: string
+          id?: string
+          mensaje?: string | null
+          updated_at?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointments_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      auctions: {
+        Row: {
+          activa: boolean
+          created_at: string
+          fecha_fin: string
+          fecha_inicio: string
+          id: string
+          participantes: string[] | null
+          precio_actual: number
+          precio_inicial: number
+          updated_at: string
+          vehicle_id: string
+        }
+        Insert: {
+          activa?: boolean
+          created_at?: string
+          fecha_fin: string
+          fecha_inicio: string
+          id?: string
+          participantes?: string[] | null
+          precio_actual: number
+          precio_inicial: number
+          updated_at?: string
+          vehicle_id: string
+        }
+        Update: {
+          activa?: boolean
+          created_at?: string
+          fecha_fin?: string
+          fecha_inicio?: string
+          id?: string
+          participantes?: string[] | null
+          precio_actual?: number
+          precio_inicial?: number
+          updated_at?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auctions_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bids: {
+        Row: {
+          auction_id: string
+          cantidad: number
+          created_at: string
+          fecha: string
+          id: string
+          user_id: string
+          user_name: string
+        }
+        Insert: {
+          auction_id: string
+          cantidad: number
+          created_at?: string
+          fecha?: string
+          id?: string
+          user_id: string
+          user_name: string
+        }
+        Update: {
+          auction_id?: string
+          cantidad?: number
+          created_at?: string
+          fecha?: string
+          id?: string
+          user_id?: string
+          user_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bids_auction_id_fkey"
+            columns: ["auction_id"]
+            isOneToOne: false
+            referencedRelation: "auctions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          fecha_registro: string
+          id: string
+          nombre: string
+          rol: string
+          telefono: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          fecha_registro?: string
+          id: string
+          nombre: string
+          rol?: string
+          telefono?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          fecha_registro?: string
+          id?: string
+          nombre?: string
+          rol?: string
+          telefono?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      reservations: {
+        Row: {
+          cliente_email: string
+          cliente_nombre: string
+          cliente_telefono: string
+          created_at: string
+          estado: string
+          fecha_apartado: string
+          id: string
+          monto_seña: number
+          updated_at: string
+          vehicle_id: string
+        }
+        Insert: {
+          cliente_email: string
+          cliente_nombre: string
+          cliente_telefono: string
+          created_at?: string
+          estado?: string
+          fecha_apartado?: string
+          id?: string
+          monto_seña: number
+          updated_at?: string
+          vehicle_id: string
+        }
+        Update: {
+          cliente_email?: string
+          cliente_nombre?: string
+          cliente_telefono?: string
+          created_at?: string
+          estado?: string
+          fecha_apartado?: string
+          id?: string
+          monto_seña?: number
+          updated_at?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reservations_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vehicles: {
+        Row: {
+          año: number
+          apartado: boolean
+          caracteristicas: string[] | null
+          color: string
+          combustible: string
+          created_at: string
+          descripcion: string | null
+          en_subasta: boolean
+          estado_general: string
+          fecha_creacion: string
+          id: string
+          imagen: string | null
+          imagenes: string[] | null
+          kilometraje: number
+          marca: string
+          modelo: string
+          precio: number
+          transmision: string
+          updated_at: string
+        }
+        Insert: {
+          año: number
+          apartado?: boolean
+          caracteristicas?: string[] | null
+          color: string
+          combustible: string
+          created_at?: string
+          descripcion?: string | null
+          en_subasta?: boolean
+          estado_general?: string
+          fecha_creacion?: string
+          id?: string
+          imagen?: string | null
+          imagenes?: string[] | null
+          kilometraje?: number
+          marca: string
+          modelo: string
+          precio: number
+          transmision: string
+          updated_at?: string
+        }
+        Update: {
+          año?: number
+          apartado?: boolean
+          caracteristicas?: string[] | null
+          color?: string
+          combustible?: string
+          created_at?: string
+          descripcion?: string | null
+          en_subasta?: boolean
+          estado_general?: string
+          fecha_creacion?: string
+          id?: string
+          imagen?: string | null
+          imagenes?: string[] | null
+          kilometraje?: number
+          marca?: string
+          modelo?: string
+          precio?: number
+          transmision?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
