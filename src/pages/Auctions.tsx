@@ -31,7 +31,7 @@ const Auctions = () => {
           <h1 className="text-4xl font-bold text-gray-900 mb-4">Subastas Activas</h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
             Participa en nuestras emocionantes subastas de vehículos. 
-            Encuentra ofertas increíbles y puја por el auto de tus sueños.
+            Encuentra ofertas increíbles y puja por el auto de tus sueños.
           </p>
         </div>
 
@@ -109,13 +109,13 @@ const Auctions = () => {
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Precio inicial:</span>
                       <span className="font-medium">
-                        ${auction.precio_inicial.toLocaleString()}
+                        ${Number(auction.precio_inicial).toLocaleString()}
                       </span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Puja actual:</span>
                       <span className="font-bold text-green-600">
-                        ${auction.precio_actual.toLocaleString()}
+                        ${Number(auction.precio_actual).toLocaleString()}
                       </span>
                     </div>
                     <div className="flex justify-between text-sm">

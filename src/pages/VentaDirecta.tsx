@@ -6,17 +6,39 @@ import VehicleCard from '@/components/VehicleCard';
 import FilterSidebar from '@/components/FilterSidebar';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search } from 'lucide-react';
-import { FilterOptions } from '@/types';
+import { Search, Filter } from 'lucide-react';
+import { FilterOptions, Vehicle } from '@/types';
 
 const VentaDirecta = () => {
   const { data: vehicles = [], isLoading } = useVehicles();
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState<FilterOptions>({});
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  // Convertir los datos de la base de datos al formato esperado por la interfaz
+  const mappedVehicles: Vehicle[] = vehicles.map(vehicle => ({
+    id: vehicle.id,
+    marca: vehicle.marca,
+    modelo: vehicle.modelo,
+    año: vehicle.año,
+    kilometraje: vehicle.kilometraje,
+    precio: Number(vehicle.precio),
+    transmision: vehicle.transmision as 'Manual' | 'Automática',
+    combustible: vehicle.combustible as 'Gasolina' | 'Diesel' | 'Híbrido' | 'Eléctrico',
+    color: vehicle.color,
+    imagen: vehicle.imagen || '/placeholder.svg',
+    imagenes: vehicle.imagenes || [],
+    descripcion: vehicle.descripcion || '',
+    caracteristicas: vehicle.caracteristicas || [],
+    enSubasta: vehicle.en_subasta,
+    apartado: vehicle.apartado,
+    fechaCreacion: new Date(vehicle.fecha_creacion),
+    estadoGeneral: vehicle.estado_general as 'Excelente' | 'Muy Bueno' | 'Bueno' | 'Regular'
+  }));
 
   // Filtrar vehículos que no están en subasta ni apartados
-  const availableVehicles = vehicles.filter(vehicle => 
-    !vehicle.en_subasta && !vehicle.apartado
+  const availableVehicles = mappedVehicles.filter(vehicle => 
+    !vehicle.enSubasta && !vehicle.apartado
   );
 
   const filteredVehicles = availableVehicles.filter(vehicle => {
@@ -36,6 +58,10 @@ const VentaDirecta = () => {
     return matchesSearch && matchesBrand && matchesYear && matchesPrice && 
            matchesKm && matchesTransmission && matchesFuel;
   });
+
+  const clearFilters = () => {
+    setFilters({});
+  };
 
   if (isLoading) {
     return (
@@ -62,24 +88,35 @@ const VentaDirecta = () => {
         </div>
 
         <div className="mb-8">
-          <div className="flex max-w-md mx-auto">
+          <div className="flex max-w-md mx-auto gap-2">
             <Input
               type="text"
               placeholder="Buscar por marca o modelo..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="rounded-r-none"
+              className="flex-1"
             />
-            <Button className="rounded-l-none bg-automotive-blue hover:bg-automotive-blue/80">
+            <Button className="bg-automotive-blue hover:bg-automotive-blue/80">
               <Search className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => setIsSidebarOpen(true)}
+              className="lg:hidden"
+            >
+              <Filter className="h-4 w-4" />
             </Button>
           </div>
         </div>
 
         <div className="flex gap-8">
-          <aside className="w-1/4">
-            <FilterSidebar onFilterChange={setFilters} />
-          </aside>
+          <FilterSidebar 
+            filters={filters}
+            onFiltersChange={setFilters}
+            onClearFilters={clearFilters}
+            isOpen={isSidebarOpen}
+            onClose={() => setIsSidebarOpen(false)}
+          />
 
           <main className="flex-1">
             {filteredVehicles.length === 0 ? (
