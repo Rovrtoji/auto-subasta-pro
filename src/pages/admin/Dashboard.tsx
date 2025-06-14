@@ -1,13 +1,15 @@
-
 import { Car, TrendingUp, Clock, MapPin, Users, DollarSign, Package, Target } from 'lucide-react';
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import Header from '../../components/Header';
 import SalesPerformanceChart from '../../components/SalesPerformanceChart';
+import SoldVehiclesModal from '../../components/SoldVehiclesModal';
 import { mockDashboardStats, mockVehicles, mockAuctions } from '../../data/mockData';
 
 const AdminDashboard = () => {
+  const [showSoldVehicles, setShowSoldVehicles] = useState(false);
   const stats = mockDashboardStats;
 
   const formatPrice = (price: number) => {
@@ -59,7 +61,10 @@ const AdminDashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-lg automotive-card">
+          <Card 
+            className="border-0 shadow-lg automotive-card cursor-pointer hover:shadow-xl transition-shadow"
+            onClick={() => setShowSoldVehicles(true)}
+          >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Vendidos</CardTitle>
               <Target className="h-4 w-4 text-green-600" />
@@ -67,6 +72,7 @@ const AdminDashboard = () => {
             <CardContent>
               <div className="text-2xl font-bold text-green-600">{stats.vehiculosVendidos}</div>
               <p className="text-xs text-muted-foreground">Este mes: {stats.ventasDelMes}</p>
+              <p className="text-xs text-blue-600 mt-1 font-medium">Click para ver detalles</p>
             </CardContent>
           </Card>
 
@@ -201,6 +207,12 @@ const AdminDashboard = () => {
         {/* Performance Chart */}
         <SalesPerformanceChart />
       </div>
+
+      {/* Sold Vehicles Modal */}
+      <SoldVehiclesModal 
+        isOpen={showSoldVehicles}
+        onClose={() => setShowSoldVehicles(false)}
+      />
     </div>
   );
 };
