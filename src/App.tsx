@@ -1,50 +1,67 @@
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
-import AdminDashboard from "./pages/admin/Dashboard";
-import AdminInventory from "./pages/admin/Inventory";
-import AdminCalculator from "./pages/admin/Calculator";
-import AdminChatCenter from "./pages/admin/ChatCenter";
-import LoginAdmin from "./pages/admin/LoginAdmin";
-import RegisterExecutive from "./pages/admin/RegisterExecutive";
-import Auctions from "./pages/Auctions";
-import VentaDirecta from "./pages/VentaDirecta";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import NotFound from "./pages/NotFound";
-import FloatingChatButton from "./components/FloatingChatButton";
+import { Suspense, lazy } from 'react';
+import { Toaster } from '@/components/ui/toaster';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import FloatingChatButton from './components/FloatingChatButton';
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/venta-directa" element={<VentaDirecta />} />
-          <Route path="/subastas" element={<Auctions />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/admin/login" element={<LoginAdmin />} />
-          <Route path="/admin/register" element={<RegisterExecutive />} />
-          <Route path="/admin/inventario" element={<AdminInventory />} />
-          <Route path="/admin/calculadora" element={<AdminCalculator />} />
-          <Route path="/admin/chat" element={<AdminChatCenter />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-        <FloatingChatButton />
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+// Lazy load components
+const Index = lazy(() => import('./pages/Index'));
+const VentaDirecta = lazy(() => import('./pages/VentaDirecta'));
+const Auctions = lazy(() => import('./pages/Auctions'));
+const Login = lazy(() => import('./pages/Login'));
+const Register = lazy(() => import('./pages/Register'));
+const NotFound = lazy(() => import('./pages/NotFound'));
+
+// Admin pages
+const AdminDashboard = lazy(() => import('./pages/admin/Dashboard'));
+const AdminInventory = lazy(() => import('./pages/admin/Inventory'));
+const AdminActiveAuctions = lazy(() => import('./pages/admin/ActiveAuctions'));
+const AdminChatCenter = lazy(() => import('./pages/admin/ChatCenter'));
+const AdminCalculator = lazy(() => import('./pages/admin/Calculator'));
+const AdminLogin = lazy(() => import('./pages/admin/LoginAdmin'));
+const AdminRegisterExecutive = lazy(() => import('./pages/admin/RegisterExecutive'));
+
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <BrowserRouter>
+          <div className="min-h-screen bg-background font-sans antialiased">
+            <Suspense fallback={
+              <div className="min-h-screen flex items-center justify-center">
+                <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-automotive-blue"></div>
+              </div>
+            }>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/venta-directa" element={<VentaDirecta />} />
+                <Route path="/subastas" element={<Auctions />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                
+                {/* Admin routes */}
+                <Route path="/admin" element={<AdminDashboard />} />
+                <Route path="/admin/inventario" element={<AdminInventory />} />
+                <Route path="/admin/subastas" element={<AdminActiveAuctions />} />
+                <Route path="/admin/chat" element={<AdminChatCenter />} />
+                <Route path="/admin/calculadora" element={<AdminCalculator />} />
+                <Route path="/admin/login" element={<AdminLogin />} />
+                <Route path="/admin/registro-ejecutivo" element={<AdminRegisterExecutive />} />
+                
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
+            <FloatingChatButton />
+          </div>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+}
 
 export default App;

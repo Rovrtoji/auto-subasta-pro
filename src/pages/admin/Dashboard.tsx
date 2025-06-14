@@ -114,7 +114,11 @@ const AdminDashboard = () => {
                 <span>Gestionar Inventario</span>
               </Button>
               
-              <Button variant="outline" className="h-auto p-4 flex-col space-y-2 hover:bg-automotive-blue hover:text-white">
+              <Button 
+                onClick={() => window.location.href = '/admin/subastas'}
+                variant="outline" 
+                className="h-auto p-4 flex-col space-y-2 hover:bg-automotive-blue hover:text-white"
+              >
                 <Clock className="h-8 w-8" />
                 <span>Subastas Activas</span>
               </Button>
