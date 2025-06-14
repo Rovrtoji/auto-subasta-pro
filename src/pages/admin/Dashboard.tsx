@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import Header from '../../components/Header';
+import SalesPerformanceChart from '../../components/SalesPerformanceChart';
 import { mockDashboardStats, mockVehicles, mockAuctions } from '../../data/mockData';
 
 const AdminDashboard = () => {
@@ -197,24 +198,8 @@ const AdminDashboard = () => {
           </Card>
         </div>
 
-        {/* Performance Chart Placeholder */}
-        <Card className="border-0 shadow-lg automotive-card">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <TrendingUp className="h-5 w-5 text-automotive-blue" />
-              <span>Rendimiento de Ventas</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-64 bg-gradient-to-r from-automotive-blue/10 to-automotive-gold/10 rounded-lg flex items-center justify-center">
-              <div className="text-center space-y-2">
-                <TrendingUp className="h-12 w-12 text-automotive-blue mx-auto" />
-                <p className="text-lg font-semibold text-automotive-carbon">Gráfico de Rendimiento</p>
-                <p className="text-sm text-muted-foreground">Próximamente: análisis detallado de ventas</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Performance Chart */}
+        <SalesPerformanceChart />
       </div>
     </div>
   );
