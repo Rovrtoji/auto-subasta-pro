@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { FileExcel, Car, Calendar, DollarSign, User, Phone, Mail } from 'lucide-react';
+import { File, Car, Calendar, DollarSign, User, Phone, Mail } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -108,7 +108,7 @@ const SoldVehiclesModal = ({ isOpen, onClose }: SoldVehiclesModalProps) => {
               className="btn-premium"
               disabled={soldVehicles.length === 0}
             >
-              <FileExcel className="h-4 w-4 mr-2" />
+              <File className="h-4 w-4 mr-2" />
               Exportar a Excel
             </Button>
           </DialogTitle>
