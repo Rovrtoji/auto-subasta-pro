@@ -5,10 +5,13 @@ import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Plus, Edit, Eye } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Plus, Edit, Upload, X } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
@@ -19,6 +22,8 @@ const AdminInventory = () => {
   const updateVehicle = useUpdateVehicle();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<any>(null);
+  const [imageUrls, setImageUrls] = useState<string[]>(['']);
+  const [caracteristicas, setCaracteristicas] = useState<string[]>(['']);
 
   const form = useForm({
     defaultValues: {
@@ -31,25 +36,36 @@ const AdminInventory = () => {
       combustible: 'Gasolina',
       color: '',
       descripcion: '',
-      estado_general: 'Bueno'
+      estado_general: 'Bueno',
+      en_subasta: false,
+      apartado: false
     }
   });
 
   const onSubmit = async (data: any) => {
     try {
+      const vehicleData = {
+        ...data,
+        imagen: imageUrls[0] || '',
+        imagenes: imageUrls.filter(url => url.trim() !== ''),
+        caracteristicas: caracteristicas.filter(feature => feature.trim() !== '')
+      };
+
       if (editingVehicle) {
         await updateVehicle.mutateAsync({
           id: editingVehicle.id,
-          updates: data
+          updates: vehicleData
         });
         toast.success('Vehículo actualizado exitosamente');
       } else {
-        await createVehicle.mutateAsync(data);
+        await createVehicle.mutateAsync(vehicleData);
         toast.success('Vehículo creado exitosamente');
       }
       setIsDialogOpen(false);
       setEditingVehicle(null);
       form.reset();
+      setImageUrls(['']);
+      setCaracteristicas(['']);
     } catch (error) {
       toast.error('Error al procesar el vehículo');
       console.error(error);
@@ -59,6 +75,44 @@ const AdminInventory = () => {
   const handleEdit = (vehicle: any) => {
     setEditingVehicle(vehicle);
     form.reset(vehicle);
+    setImageUrls(vehicle.imagenes?.length > 0 ? vehicle.imagenes : ['']);
+    setCaracteristicas(vehicle.caracteristicas?.length > 0 ? vehicle.caracteristicas : ['']);
+    setIsDialogOpen(true);
+  };
+
+  const addImageUrl = () => {
+    setImageUrls([...imageUrls, '']);
+  };
+
+  const removeImageUrl = (index: number) => {
+    setImageUrls(imageUrls.filter((_, i) => i !== index));
+  };
+
+  const updateImageUrl = (index: number, value: string) => {
+    const newUrls = [...imageUrls];
+    newUrls[index] = value;
+    setImageUrls(newUrls);
+  };
+
+  const addCaracteristica = () => {
+    setCaracteristicas([...caracteristicas, '']);
+  };
+
+  const removeCaracteristica = (index: number) => {
+    setCaracteristicas(caracteristicas.filter((_, i) => i !== index));
+  };
+
+  const updateCaracteristica = (index: number, value: string) => {
+    const newFeatures = [...caracteristicas];
+    newFeatures[index] = value;
+    setCaracteristicas(newFeatures);
+  };
+
+  const handleNewVehicle = () => {
+    setEditingVehicle(null);
+    form.reset();
+    setImageUrls(['']);
+    setCaracteristicas(['']);
     setIsDialogOpen(true);
   };
 
@@ -92,13 +146,13 @@ const AdminInventory = () => {
         
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-automotive-blue hover:bg-automotive-blue/80">
+            <Button onClick={handleNewVehicle} className="bg-automotive-blue hover:bg-automotive-blue/80">
               <Plus className="h-4 w-4 mr-2" />
               Agregar Vehículo
             </Button>
           </DialogTrigger>
           
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingVehicle ? 'Editar Vehículo' : 'Agregar Nuevo Vehículo'}
@@ -106,30 +160,188 @@ const AdminInventory = () => {
             </DialogHeader>
             
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                {/* Información Básica */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">Información Básica</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="marca"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Marca *</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Ej: Toyota, Ford, Honda" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="modelo"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Modelo *</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Ej: Camry, Focus, Civic" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="año"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Año *</FormLabel>
+                          <FormControl>
+                            <Input type="number" min="1950" max={new Date().getFullYear() + 1} {...field} onChange={(e) => field.onChange(parseInt(e.target.value))} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="precio"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Precio (MXN) *</FormLabel>
+                          <FormControl>
+                            <Input type="number" min="0" step="0.01" placeholder="150000" {...field} onChange={(e) => field.onChange(parseFloat(e.target.value))} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="kilometraje"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Kilometraje *</FormLabel>
+                          <FormControl>
+                            <Input type="number" min="0" placeholder="50000" {...field} onChange={(e) => field.onChange(parseInt(e.target.value))} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="transmision"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Transmisión *</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecciona transmisión" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="Manual">Manual</SelectItem>
+                              <SelectItem value="Automática">Automática</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="combustible"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Combustible *</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecciona combustible" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="Gasolina">Gasolina</SelectItem>
+                              <SelectItem value="Diesel">Diesel</SelectItem>
+                              <SelectItem value="Híbrido">Híbrido</SelectItem>
+                              <SelectItem value="Eléctrico">Eléctrico</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="color"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Color *</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Ej: Blanco, Negro, Azul" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="estado_general"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Estado General *</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecciona estado" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="Excelente">Excelente</SelectItem>
+                              <SelectItem value="Muy Bueno">Muy Bueno</SelectItem>
+                              <SelectItem value="Bueno">Bueno</SelectItem>
+                              <SelectItem value="Regular">Regular</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+
+                {/* Descripción */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">Descripción</h3>
                   <FormField
                     control={form.control}
-                    name="marca"
+                    name="descripcion"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Marca</FormLabel>
+                        <FormLabel>Descripción del vehículo</FormLabel>
                         <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="modelo"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Modelo</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
+                          <Textarea 
+                            placeholder="Describe el vehículo, su estado, historial, mantenimiento, etc."
+                            className="min-h-[100px]"
+                            {...field} 
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -137,64 +349,128 @@ const AdminInventory = () => {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="año"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Año</FormLabel>
-                        <FormControl>
-                          <Input type="number" {...field} onChange={(e) => field.onChange(parseInt(e.target.value))} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="precio"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Precio</FormLabel>
-                        <FormControl>
-                          <Input type="number" {...field} onChange={(e) => field.onChange(parseFloat(e.target.value))} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                {/* Imágenes */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">Imágenes</h3>
+                  <div className="space-y-3">
+                    {imageUrls.map((url, index) => (
+                      <div key={index} className="flex gap-2">
+                        <Input
+                          placeholder={index === 0 ? "URL de imagen principal *" : "URL de imagen adicional"}
+                          value={url}
+                          onChange={(e) => updateImageUrl(index, e.target.value)}
+                          className="flex-1"
+                        />
+                        {imageUrls.length > 1 && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => removeImageUrl(index)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={addImageUrl}
+                      className="w-full"
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      Agregar otra imagen
+                    </Button>
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="kilometraje"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Kilometraje</FormLabel>
-                        <FormControl>
-                          <Input type="number" {...field} onChange={(e) => field.onChange(parseInt(e.target.value))} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="color"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Color</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                {/* Características */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">Características</h3>
+                  <div className="space-y-3">
+                    {caracteristicas.map((feature, index) => (
+                      <div key={index} className="flex gap-2">
+                        <Input
+                          placeholder="Ej: Aire acondicionado, Sistema de navegación, Cámara trasera"
+                          value={feature}
+                          onChange={(e) => updateCaracteristica(index, e.target.value)}
+                          className="flex-1"
+                        />
+                        {caracteristicas.length > 1 && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => removeCaracteristica(index)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={addCaracteristica}
+                      className="w-full"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Agregar característica
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Estado del Vehículo */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">Estado del Vehículo</h3>
+                  <div className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="en_subasta"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel>
+                              Vehículo en subasta
+                            </FormLabel>
+                            <p className="text-sm text-muted-foreground">
+                              El vehículo aparecerá en la sección de subastas
+                            </p>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="apartado"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel>
+                              Vehículo apartado
+                            </FormLabel>
+                            <p className="text-sm text-muted-foreground">
+                              El vehículo ya está reservado por un cliente
+                            </p>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                 </div>
 
                 <Button type="submit" className="w-full" disabled={createVehicle.isPending || updateVehicle.isPending}>
@@ -219,6 +495,7 @@ const AdminInventory = () => {
                 <TableHead>Precio</TableHead>
                 <TableHead>Kilometraje</TableHead>
                 <TableHead>Estado</TableHead>
+                <TableHead>Destino</TableHead>
                 <TableHead>Acciones</TableHead>
               </TableRow>
             </TableHeader>
@@ -226,9 +503,18 @@ const AdminInventory = () => {
               {vehicles.map((vehicle) => (
                 <TableRow key={vehicle.id}>
                   <TableCell>
-                    <div>
-                      <div className="font-medium">{vehicle.marca} {vehicle.modelo}</div>
-                      <div className="text-sm text-gray-500">{vehicle.color}</div>
+                    <div className="flex items-center space-x-3">
+                      {vehicle.imagen && (
+                        <img 
+                          src={vehicle.imagen} 
+                          alt={`${vehicle.marca} ${vehicle.modelo}`}
+                          className="w-12 h-12 object-cover rounded"
+                        />
+                      )}
+                      <div>
+                        <div className="font-medium">{vehicle.marca} {vehicle.modelo}</div>
+                        <div className="text-sm text-gray-500">{vehicle.color}</div>
+                      </div>
                     </div>
                   </TableCell>
                   <TableCell>{vehicle.año}</TableCell>
@@ -242,6 +528,13 @@ const AdminInventory = () => {
                     }`}>
                       {vehicle.apartado ? 'Apartado' : 
                        vehicle.en_subasta ? 'En Subasta' : 'Disponible'}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <span className={`inline-flex px-2 py-1 text-xs rounded-full ${
+                      vehicle.en_subasta ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
+                    }`}>
+                      {vehicle.en_subasta ? 'Subasta' : 'Venta Directa'}
                     </span>
                   </TableCell>
                   <TableCell>
