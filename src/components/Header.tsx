@@ -1,14 +1,39 @@
 
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Car, Menu, X, Gavel, ShoppingCart, User, LogIn, UserPlus } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Car, Menu, X, Gavel, ShoppingCart, LogIn, UserPlus, User, LogOut, History, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { useAuth } from '@/hooks/useAuth';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { user, profile, signOut } = useAuth();
+  const navigate = useNavigate();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
+
+  const getUserInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(word => word.charAt(0))
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
   };
 
   return (
@@ -81,20 +106,72 @@ const Header = () => {
             </Link>
           </nav>
 
-          {/* Desktop Auth Buttons */}
+          {/* Desktop Auth Section */}
           <div className="hidden md:flex items-center space-x-3">
-            <Link to="/login">
-              <Button variant="outline" size="sm" className="flex items-center space-x-1">
-                <LogIn className="h-4 w-4" />
-                <span>Iniciar Sesión</span>
-              </Button>
-            </Link>
-            <Link to="/register">
-              <Button size="sm" className="btn-premium flex items-center space-x-1">
-                <UserPlus className="h-4 w-4" />
-                <span>Registrarse</span>
-              </Button>
-            </Link>
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={profile?.avatar_url} alt={profile?.nombre} />
+                      <AvatarFallback className="bg-automotive-blue text-white">
+                        {getUserInitials(profile?.nombre || user.email || 'U')}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56" align="end" forceMount>
+                  <div className="flex flex-col space-y-1 p-2">
+                    <p className="text-sm font-medium leading-none">{profile?.nombre}</p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                      {user.email}
+                    </p>
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem>
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Perfil</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <History className="mr-2 h-4 w-4" />
+                    <span>Historial</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Configuración</span>
+                  </DropdownMenuItem>
+                  {profile?.rol === 'admin' && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => navigate('/admin')}>
+                        <Settings className="mr-2 h-4 w-4" />
+                        <span>Panel Admin</span>
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Cerrar Sesión</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <>
+                <Link to="/login">
+                  <Button variant="outline" size="sm" className="flex items-center space-x-1">
+                    <LogIn className="h-4 w-4" />
+                    <span>Iniciar Sesión</span>
+                  </Button>
+                </Link>
+                <Link to="/register">
+                  <Button size="sm" className="btn-premium flex items-center space-x-1">
+                    <UserPlus className="h-4 w-4" />
+                    <span>Registrarse</span>
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -174,20 +251,77 @@ const Header = () => {
                 Contacto
               </Link>
 
-              {/* Mobile Auth Buttons */}
+              {/* Mobile Auth Section */}
               <div className="pt-4 border-t border-gray-200 space-y-2">
-                <Link to="/login" onClick={toggleMenu}>
-                  <Button variant="outline" size="sm" className="w-full flex items-center justify-center space-x-1">
-                    <LogIn className="h-4 w-4" />
-                    <span>Iniciar Sesión</span>
-                  </Button>
-                </Link>
-                <Link to="/register" onClick={toggleMenu}>
-                  <Button size="sm" className="w-full btn-premium flex items-center justify-center space-x-1">
-                    <UserPlus className="h-4 w-4" />
-                    <span>Registrarse</span>
-                  </Button>
-                </Link>
+                {user ? (
+                  <>
+                    <div className="flex items-center space-x-3 px-2 py-2">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={profile?.avatar_url} alt={profile?.nombre} />
+                        <AvatarFallback className="bg-automotive-blue text-white text-sm">
+                          {getUserInitials(profile?.nombre || user.email || 'U')}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="text-sm font-medium">{profile?.nombre}</p>
+                        <p className="text-xs text-gray-500">{user.email}</p>
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <Button variant="ghost" className="w-full justify-start" onClick={toggleMenu}>
+                        <User className="mr-2 h-4 w-4" />
+                        Perfil
+                      </Button>
+                      <Button variant="ghost" className="w-full justify-start" onClick={toggleMenu}>
+                        <History className="mr-2 h-4 w-4" />
+                        Historial
+                      </Button>
+                      <Button variant="ghost" className="w-full justify-start" onClick={toggleMenu}>
+                        <Settings className="mr-2 h-4 w-4" />
+                        Configuración
+                      </Button>
+                      {profile?.rol === 'admin' && (
+                        <Button 
+                          variant="ghost" 
+                          className="w-full justify-start" 
+                          onClick={() => {
+                            toggleMenu();
+                            navigate('/admin');
+                          }}
+                        >
+                          <Settings className="mr-2 h-4 w-4" />
+                          Panel Admin
+                        </Button>
+                      )}
+                      <Button 
+                        variant="ghost" 
+                        className="w-full justify-start text-red-600 hover:text-red-700" 
+                        onClick={() => {
+                          toggleMenu();
+                          handleSignOut();
+                        }}
+                      >
+                        <LogOut className="mr-2 h-4 w-4" />
+                        Cerrar Sesión
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <Link to="/login" onClick={toggleMenu}>
+                      <Button variant="outline" size="sm" className="w-full flex items-center justify-center space-x-1">
+                        <LogIn className="h-4 w-4" />
+                        <span>Iniciar Sesión</span>
+                      </Button>
+                    </Link>
+                    <Link to="/register" onClick={toggleMenu}>
+                      <Button size="sm" className="w-full btn-premium flex items-center justify-center space-x-1">
+                        <UserPlus className="h-4 w-4" />
+                        <span>Registrarse</span>
+                      </Button>
+                    </Link>
+                  </>
+                )}
               </div>
             </nav>
           </div>
