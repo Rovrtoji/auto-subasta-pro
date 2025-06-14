@@ -112,7 +112,7 @@ const AdminDashboard = () => {
                 <span>Subastas Activas</span>
               </Button>
               
-              <Button variant="outline" className="h-auto p-4 flex-col space-y-2 hover:bg-automotive-gold hover:text-white">
+              <Button onClick={() => window.location.href = '/admin/chat'} variant="outline" className="h-auto p-4 flex-col space-y-2 hover:bg-automotive-gold hover:text-white">
                 <Users className="h-8 w-8" />
                 <span>Chat Center</span>
               </Button>
