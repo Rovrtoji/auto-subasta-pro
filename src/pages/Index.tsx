@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from 'react';
 import { Filter, Grid, List, Search, Gavel, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -13,6 +12,7 @@ import ReservationForm from '../components/ReservationForm';
 import AuctionTimer from '../components/AuctionTimer';
 import { mockVehicles, mockAuctions } from '../data/mockData';
 import { FilterOptions, Vehicle } from '../types';
+import PaymentModal from '../components/PaymentModal';
 
 const Index = () => {
   const [filters, setFilters] = useState<FilterOptions>({});
@@ -22,6 +22,7 @@ const Index = () => {
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [appointmentVehicle, setAppointmentVehicle] = useState<Vehicle | null>(null);
   const [reservationVehicle, setReservationVehicle] = useState<Vehicle | null>(null);
+  const [paymentVehicle, setPaymentVehicle] = useState<Vehicle | null>(null);
 
   // Filter vehicles based on filters and search
   const filteredVehicles = useMemo(() => {
@@ -74,6 +75,13 @@ const Index = () => {
     const vehicle = mockVehicles.find(v => v.id === vehicleId);
     if (vehicle && !vehicle.apartado) {
       setReservationVehicle(vehicle);
+    }
+  };
+
+  const handlePaymentModal = (vehicleId: string) => {
+    const vehicle = mockVehicles.find(v => v.id === vehicleId);
+    if (vehicle && !vehicle.apartado) {
+      setPaymentVehicle(vehicle);
     }
   };
 
@@ -248,6 +256,7 @@ const Index = () => {
                       vehicle={vehicle}
                       onReserve={handleReserveVehicle}
                       onSchedule={handleScheduleAppointment}
+                      onPayment={handlePaymentModal}
                     />
                   ))}
                 </div>
@@ -308,6 +317,17 @@ const Index = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Payment Modal */}
+      {paymentVehicle && (
+        <PaymentModal
+          isOpen={!!paymentVehicle}
+          onClose={() => setPaymentVehicle(null)}
+          vehicleId={paymentVehicle.id}
+          vehicleName={`${paymentVehicle.marca} ${paymentVehicle.modelo}`}
+          vehiclePrice={paymentVehicle.precio}
+        />
+      )}
     </div>
   );
 };

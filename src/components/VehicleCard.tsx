@@ -11,9 +11,10 @@ interface VehicleCardProps {
   onReserve?: (vehicleId: string) => void;
   onSchedule?: (vehicleId: string) => void;
   onBid?: (vehicleId: string) => void;
+  onPayment?: (vehicleId: string) => void;
 }
 
-const VehicleCard = ({ vehicle, showAuctionInfo = false, onReserve, onSchedule, onBid }: VehicleCardProps) => {
+const VehicleCard = ({ vehicle, showAuctionInfo = false, onReserve, onSchedule, onBid, onPayment }: VehicleCardProps) => {
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('es-MX', {
       style: 'currency',
@@ -23,6 +24,14 @@ const VehicleCard = ({ vehicle, showAuctionInfo = false, onReserve, onSchedule, 
 
   const formatKilometers = (km: number) => {
     return new Intl.NumberFormat('es-MX').format(km) + ' km';
+  };
+
+  const handleApartarClick = () => {
+    if (onPayment) {
+      onPayment(vehicle.id);
+    } else if (onReserve) {
+      onReserve(vehicle.id);
+    }
   };
 
   return (
@@ -145,7 +154,7 @@ const VehicleCard = ({ vehicle, showAuctionInfo = false, onReserve, onSchedule, 
               Agendar
             </Button>
             <Button 
-              onClick={() => onReserve?.(vehicle.id)}
+              onClick={handleApartarClick}
               className="flex-1 btn-premium"
               disabled={vehicle.apartado}
             >

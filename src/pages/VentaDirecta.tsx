@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Filter, ShoppingCart } from 'lucide-react';
@@ -8,11 +7,14 @@ import VehicleCard from '../components/VehicleCard';
 import FilterSidebar from '../components/FilterSidebar';
 import { mockVehicles } from '../data/mockData';
 import { FilterOptions } from '../types';
+import PaymentModal from '../components/PaymentModal';
+import { Vehicle } from '../types';
 
 const VentaDirecta = () => {
   const [searchParams] = useSearchParams();
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [filters, setFilters] = useState<FilterOptions>({});
+  const [paymentVehicle, setPaymentVehicle] = useState<Vehicle | null>(null);
 
   // Filtrar solo vehículos que NO están en subasta
   const ventaDirectaVehicles = useMemo(() => {
@@ -61,6 +63,13 @@ const VentaDirecta = () => {
 
   const handleClearFilters = () => {
     setFilters({});
+  };
+
+  const handlePaymentModal = (vehicleId: string) => {
+    const vehicle = mockVehicles.find(v => v.id === vehicleId);
+    if (vehicle && !vehicle.apartado) {
+      setPaymentVehicle(vehicle);
+    }
   };
 
   return (
@@ -127,7 +136,11 @@ const VentaDirecta = () => {
             {/* Vehicles Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               {filteredVehicles.map((vehicle) => (
-                <VehicleCard key={vehicle.id} vehicle={vehicle} />
+                <VehicleCard 
+                  key={vehicle.id} 
+                  vehicle={vehicle} 
+                  onPayment={handlePaymentModal}
+                />
               ))}
             </div>
 
@@ -162,6 +175,17 @@ const VentaDirecta = () => {
         isOpen={isFilterOpen}
         onClose={() => setIsFilterOpen(false)}
       />
+
+      {/* Payment Modal */}
+      {paymentVehicle && (
+        <PaymentModal
+          isOpen={!!paymentVehicle}
+          onClose={() => setPaymentVehicle(null)}
+          vehicleId={paymentVehicle.id}
+          vehicleName={`${paymentVehicle.marca} ${paymentVehicle.modelo}`}
+          vehiclePrice={paymentVehicle.precio}
+        />
+      )}
     </div>
   );
 };
