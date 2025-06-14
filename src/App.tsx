@@ -8,6 +8,8 @@ import Index from "./pages/Index";
 import AdminDashboard from "./pages/admin/Dashboard";
 import AdminInventory from "./pages/admin/Inventory";
 import AdminCalculator from "./pages/admin/Calculator";
+import LoginAdmin from "./pages/admin/LoginAdmin";
+import RegisterExecutive from "./pages/admin/RegisterExecutive";
 import Auctions from "./pages/Auctions";
 import VentaDirecta from "./pages/VentaDirecta";
 import Login from "./pages/Login";
@@ -30,6 +32,8 @@ const App = () => (
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/login" element={<LoginAdmin />} />
+          <Route path="/admin/register" element={<RegisterExecutive />} />
           <Route path="/admin/inventario" element={<AdminInventory />} />
           <Route path="/admin/calculadora" element={<AdminCalculator />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

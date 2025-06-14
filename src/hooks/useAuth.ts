@@ -16,17 +16,24 @@ export const useAuth = () => {
     // Configurar listener de cambios de autenticación
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state change:', event, session?.user?.id);
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
           // Obtener perfil del usuario
           setTimeout(async () => {
-            const { data: profileData } = await supabase
+            const { data: profileData, error } = await supabase
               .from('profiles')
               .select('*')
               .eq('id', session.user.id)
               .single();
+            
+            if (error) {
+              console.error('Error fetching profile:', error);
+            } else {
+              console.log('Profile loaded:', profileData);
+            }
             
             setProfile(profileData);
             setLoading(false);
@@ -40,9 +47,12 @@ export const useAuth = () => {
 
     // Verificar sesión existente
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Initial session:', session?.user?.id);
       setSession(session);
       setUser(session?.user ?? null);
-      setLoading(false);
+      if (!session) {
+        setLoading(false);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -56,16 +66,28 @@ export const useAuth = () => {
     return { error };
   };
 
-  const signUp = async (email: string, password: string, nombre: string) => {
-    const { error } = await supabase.auth.signUp({
+  const signUp = async (email: string, password: string, nombre: string, telefono?: string, rol: string = 'cliente') => {
+    console.log('Signing up user with:', { email, nombre, telefono, rol });
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         emailRedirectTo: `${window.location.origin}/`,
-        data: { nombre }
+        data: { 
+          nombre,
+          telefono: telefono || null,
+          rol
+        }
       }
     });
-    return { error };
+    
+    if (data.user && !error) {
+      console.log('User created successfully:', data.user.id);
+    } else if (error) {
+      console.error('Sign up error:', error);
+    }
+    
+    return { data, error };
   };
 
   const signOut = async () => {
