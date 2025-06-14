@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useVehicles, useCreateVehicle, useUpdateVehicle, useInventoryStats } from '@/hooks/useVehicles';
 import { useAuth } from '@/hooks/useAuth';
@@ -10,9 +11,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Edit, Upload, X, BarChart3 } from 'lucide-react';
+import { Plus, Edit, BarChart3, X } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
+import ImageUploader from '@/components/ImageUploader';
 
 const AdminInventory = () => {
   const { data: vehicles = [], isLoading } = useVehicles();
@@ -22,7 +24,7 @@ const AdminInventory = () => {
   const updateVehicle = useUpdateVehicle();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<any>(null);
-  const [imageUrls, setImageUrls] = useState<string[]>(['']);
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [caracteristicas, setCaracteristicas] = useState<string[]>(['']);
 
   const form = useForm({
@@ -47,27 +49,27 @@ const AdminInventory = () => {
       const vehicleData = {
         ...data,
         imagen: imageUrls[0] || '',
-        imagenes: imageUrls.filter(url => url.trim() !== ''),
+        imagenes: imageUrls,
         caracteristicas: caracteristicas.filter(feature => feature.trim() !== '')
       };
 
       if (editingVehicle) {
         await updateVehicle.mutateAsync({
           id: editingVehicle.id,
-          updates: { ...vehicleData, imageUrls: imageUrls.filter(url => url.trim() !== '') }
+          updates: { ...vehicleData, imageUrls: imageUrls }
         });
         toast.success('Vehículo actualizado exitosamente');
       } else {
         await createVehicle.mutateAsync({
           ...vehicleData,
-          imageUrls: imageUrls.filter(url => url.trim() !== '')
+          imageUrls: imageUrls
         });
         toast.success('Vehículo creado exitosamente');
       }
       setIsDialogOpen(false);
       setEditingVehicle(null);
       form.reset();
-      setImageUrls(['']);
+      setImageUrls([]);
       setCaracteristicas(['']);
     } catch (error) {
       toast.error('Error al procesar el vehículo');
@@ -78,23 +80,9 @@ const AdminInventory = () => {
   const handleEdit = (vehicle: any) => {
     setEditingVehicle(vehicle);
     form.reset(vehicle);
-    setImageUrls(vehicle.imagenes?.length > 0 ? vehicle.imagenes : ['']);
+    setImageUrls(vehicle.imagenes?.length > 0 ? vehicle.imagenes : []);
     setCaracteristicas(vehicle.caracteristicas?.length > 0 ? vehicle.caracteristicas : ['']);
     setIsDialogOpen(true);
-  };
-
-  const addImageUrl = () => {
-    setImageUrls([...imageUrls, '']);
-  };
-
-  const removeImageUrl = (index: number) => {
-    setImageUrls(imageUrls.filter((_, i) => i !== index));
-  };
-
-  const updateImageUrl = (index: number, value: string) => {
-    const newUrls = [...imageUrls];
-    newUrls[index] = value;
-    setImageUrls(newUrls);
   };
 
   const addCaracteristica = () => {
@@ -114,7 +102,7 @@ const AdminInventory = () => {
   const handleNewVehicle = () => {
     setEditingVehicle(null);
     form.reset();
-    setImageUrls(['']);
+    setImageUrls([]);
     setCaracteristicas(['']);
     setIsDialogOpen(true);
   };
@@ -407,40 +395,14 @@ const AdminInventory = () => {
                   />
                 </div>
 
-                {/* Imágenes */}
+                {/* Subida de Imágenes */}
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Imágenes</h3>
-                  <div className="space-y-3">
-                    {imageUrls.map((url, index) => (
-                      <div key={index} className="flex gap-2">
-                        <Input
-                          placeholder={index === 0 ? "URL de imagen principal *" : "URL de imagen adicional"}
-                          value={url}
-                          onChange={(e) => updateImageUrl(index, e.target.value)}
-                          className="flex-1"
-                        />
-                        {imageUrls.length > 1 && (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => removeImageUrl(index)}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    ))}
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={addImageUrl}
-                      className="w-full"
-                    >
-                      <Upload className="h-4 w-4 mr-2" />
-                      Agregar otra imagen
-                    </Button>
-                  </div>
+                  <h3 className="text-lg font-semibold">Imágenes del Vehículo</h3>
+                  <ImageUploader
+                    images={imageUrls}
+                    onImagesChange={setImageUrls}
+                    maxImages={10}
+                  />
                 </div>
 
                 {/* Características */}
