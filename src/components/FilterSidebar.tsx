@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Search, Filter, X, Car, DollarSign, Calendar, Fuel, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Slider } from '@/components/ui/slider';
 import { Separator } from '@/components/ui/separator';
 import { FilterOptions } from '../types';
-import { marcas, años } from '../data/mockData';
+import { useVehicles } from '../hooks/useVehicles';
 
 interface FilterSidebarProps {
   filters: FilterOptions;
@@ -16,12 +16,60 @@ interface FilterSidebarProps {
   onClearFilters: () => void;
   isOpen: boolean;
   onClose: () => void;
+  searchTerm: string;
+  onSearchChange: (term: string) => void;
 }
 
-const FilterSidebar = ({ filters, onFiltersChange, onClearFilters, isOpen, onClose }: FilterSidebarProps) => {
-  const [priceRange, setPriceRange] = useState([filters.precioMin || 0, filters.precioMax || 2000000]);
-  const [yearRange, setYearRange] = useState([filters.añoMin || 2015, filters.añoMax || new Date().getFullYear()]);
-  const [kmRange, setKmRange] = useState([0, filters.kilometrajeMax || 200000]);
+const FilterSidebar = ({ 
+  filters, 
+  onFiltersChange, 
+  onClearFilters, 
+  isOpen, 
+  onClose,
+  searchTerm,
+  onSearchChange 
+}: FilterSidebarProps) => {
+  const { data: vehicles = [] } = useVehicles();
+  
+  // Generate dynamic options from actual vehicle data
+  const dynamicOptions = useMemo(() => {
+    const marcas = [...new Set(vehicles.map(v => v.marca))].sort();
+    const años = [...new Set(vehicles.map(v => v.año))].sort((a, b) => b - a);
+    const transmisiones = [...new Set(vehicles.map(v => v.transmision))].sort();
+    const combustibles = [...new Set(vehicles.map(v => v.combustible))].sort();
+    
+    const precios = vehicles.map(v => v.precio).filter(p => p > 0);
+    const kilometrajes = vehicles.map(v => v.kilometraje).filter(k => k > 0);
+    
+    const maxPrecio = precios.length > 0 ? Math.max(...precios) : 2000000;
+    const maxKilometraje = kilometrajes.length > 0 ? Math.max(...kilometrajes) : 200000;
+    const minAño = años.length > 0 ? Math.min(...años) : 2010;
+    const maxAño = años.length > 0 ? Math.max(...años) : new Date().getFullYear();
+
+    return {
+      marcas,
+      años,
+      transmisiones,
+      combustibles,
+      maxPrecio,
+      maxKilometraje,
+      minAño,
+      maxAño
+    };
+  }, [vehicles]);
+
+  const [priceRange, setPriceRange] = useState([
+    filters.precioMin || 0, 
+    filters.precioMax || dynamicOptions.maxPrecio
+  ]);
+  const [yearRange, setYearRange] = useState([
+    filters.añoMin || dynamicOptions.minAño, 
+    filters.añoMax || dynamicOptions.maxAño
+  ]);
+  const [kmRange, setKmRange] = useState([
+    0, 
+    filters.kilometrajeMax || dynamicOptions.maxKilometraje
+  ]);
 
   const handlePriceChange = (values: number[]) => {
     setPriceRange(values);
@@ -86,7 +134,9 @@ const FilterSidebar = ({ filters, onFiltersChange, onClearFilters, isOpen, onClo
               <span>Buscar</span>
             </Label>
             <Input
-              placeholder="Marca, modelo..."
+              placeholder="Marca, modelo, color..."
+              value={searchTerm}
+              onChange={(e) => onSearchChange(e.target.value)}
               className="w-full"
             />
           </div>
@@ -99,15 +149,18 @@ const FilterSidebar = ({ filters, onFiltersChange, onClearFilters, isOpen, onClo
               <Car className="h-4 w-4" />
               <span>Marca</span>
             </Label>
-            <Select value={filters.marca || 'all'} onValueChange={(value) => 
-              onFiltersChange({ ...filters, marca: value === 'all' ? undefined : value })
-            }>
+            <Select 
+              value={filters.marca || 'all'} 
+              onValueChange={(value) => 
+                onFiltersChange({ ...filters, marca: value === 'all' ? undefined : value })
+              }
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Todas las marcas" />
               </SelectTrigger>
               <SelectContent className="bg-background border border-border z-50">
                 <SelectItem value="all">Todas las marcas</SelectItem>
-                {marcas.map((marca) => (
+                {dynamicOptions.marcas.map((marca) => (
                   <SelectItem key={marca} value={marca}>{marca}</SelectItem>
                 ))}
               </SelectContent>
@@ -124,7 +177,7 @@ const FilterSidebar = ({ filters, onFiltersChange, onClearFilters, isOpen, onClo
               <Slider
                 value={priceRange}
                 onValueChange={handlePriceChange}
-                max={2000000}
+                max={dynamicOptions.maxPrecio}
                 min={0}
                 step={50000}
                 className="w-full"
@@ -146,8 +199,8 @@ const FilterSidebar = ({ filters, onFiltersChange, onClearFilters, isOpen, onClo
               <Slider
                 value={yearRange}
                 onValueChange={handleYearChange}
-                max={new Date().getFullYear()}
-                min={2010}
+                max={dynamicOptions.maxAño}
+                min={dynamicOptions.minAño}
                 step={1}
                 className="w-full"
               />
@@ -165,7 +218,7 @@ const FilterSidebar = ({ filters, onFiltersChange, onClearFilters, isOpen, onClo
               <Slider
                 value={kmRange}
                 onValueChange={handleKmChange}
-                max={200000}
+                max={dynamicOptions.maxKilometraje}
                 min={0}
                 step={10000}
                 className="w-full"
@@ -182,16 +235,20 @@ const FilterSidebar = ({ filters, onFiltersChange, onClearFilters, isOpen, onClo
               <Settings className="h-4 w-4" />
               <span>Transmisión</span>
             </Label>
-            <Select value={filters.transmision || 'all'} onValueChange={(value) => 
-              onFiltersChange({ ...filters, transmision: value === 'all' ? undefined : value })
-            }>
+            <Select 
+              value={filters.transmision || 'all'} 
+              onValueChange={(value) => 
+                onFiltersChange({ ...filters, transmision: value === 'all' ? undefined : value })
+              }
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Cualquiera" />
               </SelectTrigger>
               <SelectContent className="bg-background border border-border z-50">
                 <SelectItem value="all">Cualquiera</SelectItem>
-                <SelectItem value="Manual">Manual</SelectItem>
-                <SelectItem value="Automática">Automática</SelectItem>
+                {dynamicOptions.transmisiones.map((transmision) => (
+                  <SelectItem key={transmision} value={transmision}>{transmision}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -202,18 +259,20 @@ const FilterSidebar = ({ filters, onFiltersChange, onClearFilters, isOpen, onClo
               <Fuel className="h-4 w-4" />
               <span>Combustible</span>
             </Label>
-            <Select value={filters.combustible || 'all'} onValueChange={(value) => 
-              onFiltersChange({ ...filters, combustible: value === 'all' ? undefined : value })
-            }>
+            <Select 
+              value={filters.combustible || 'all'} 
+              onValueChange={(value) => 
+                onFiltersChange({ ...filters, combustible: value === 'all' ? undefined : value })
+              }
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Cualquiera" />
               </SelectTrigger>
               <SelectContent className="bg-background border border-border z-50">
                 <SelectItem value="all">Cualquiera</SelectItem>
-                <SelectItem value="Gasolina">Gasolina</SelectItem>
-                <SelectItem value="Diesel">Diesel</SelectItem>
-                <SelectItem value="Híbrido">Híbrido</SelectItem>
-                <SelectItem value="Eléctrico">Eléctrico</SelectItem>
+                {dynamicOptions.combustibles.map((combustible) => (
+                  <SelectItem key={combustible} value={combustible}>{combustible}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

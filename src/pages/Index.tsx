@@ -1,3 +1,4 @@
+
 import { useState, useMemo } from 'react';
 import { Filter, Grid, List, Search, Gavel, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -10,30 +11,36 @@ import FilterSidebar from '../components/FilterSidebar';
 import AppointmentForm from '../components/AppointmentForm';
 import ReservationForm from '../components/ReservationForm';
 import AuctionTimer from '../components/AuctionTimer';
-import { mockVehicles, mockAuctions } from '../data/mockData';
-import { FilterOptions, Vehicle } from '../types';
+import { FilterOptions } from '../types';
 import PaymentModal from '../components/PaymentModal';
+import { useVehicles } from '../hooks/useVehicles';
+import { useAuctions } from '../hooks/useAuctions';
 
 const Index = () => {
   const [filters, setFilters] = useState<FilterOptions>({});
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
-  const [appointmentVehicle, setAppointmentVehicle] = useState<Vehicle | null>(null);
-  const [reservationVehicle, setReservationVehicle] = useState<Vehicle | null>(null);
-  const [paymentVehicle, setPaymentVehicle] = useState<Vehicle | null>(null);
+  const [selectedVehicle, setSelectedVehicle] = useState<any>(null);
+  const [appointmentVehicle, setAppointmentVehicle] = useState<any>(null);
+  const [reservationVehicle, setReservationVehicle] = useState<any>(null);
+  const [paymentVehicle, setPaymentVehicle] = useState<any>(null);
+
+  // Use real data from hooks
+  const { data: vehicles = [], isLoading: vehiclesLoading } = useVehicles();
+  const { data: auctions = [], isLoading: auctionsLoading } = useAuctions();
 
   // Filter vehicles based on filters and search
   const filteredVehicles = useMemo(() => {
-    return mockVehicles.filter(vehicle => {
+    return vehicles.filter(vehicle => {
       // Search term filter
       if (searchTerm) {
         const searchLower = searchTerm.toLowerCase();
         const matches = 
-          vehicle.marca.toLowerCase().includes(searchLower) ||
-          vehicle.modelo.toLowerCase().includes(searchLower) ||
-          vehicle.color.toLowerCase().includes(searchLower);
+          vehicle.marca?.toLowerCase().includes(searchLower) ||
+          vehicle.modelo?.toLowerCase().includes(searchLower) ||
+          vehicle.color?.toLowerCase().includes(searchLower) ||
+          vehicle.descripcion?.toLowerCase().includes(searchLower);
         if (!matches) return false;
       }
 
@@ -45,8 +52,8 @@ const Index = () => {
       if (filters.añoMax && vehicle.año > filters.añoMax) return false;
 
       // Price filter
-      if (filters.precioMin && vehicle.precio < filters.precioMin) return false;
-      if (filters.precioMax && vehicle.precio > filters.precioMax) return false;
+      if (filters.precioMin && Number(vehicle.precio) < filters.precioMin) return false;
+      if (filters.precioMax && Number(vehicle.precio) > filters.precioMax) return false;
 
       // Kilometers filter
       if (filters.kilometrajeMax && vehicle.kilometraje > filters.kilometrajeMax) return false;
@@ -59,27 +66,27 @@ const Index = () => {
 
       return true;
     });
-  }, [filters, searchTerm]);
+  }, [vehicles, filters, searchTerm]);
 
-  const auctionVehicles = filteredVehicles.filter(v => v.enSubasta);
-  const regularVehicles = filteredVehicles.filter(v => !v.enSubasta);
+  const auctionVehicles = filteredVehicles.filter(v => v.en_subasta);
+  const regularVehicles = filteredVehicles.filter(v => !v.en_subasta);
 
   const handleScheduleAppointment = (vehicleId: string) => {
-    const vehicle = mockVehicles.find(v => v.id === vehicleId);
+    const vehicle = vehicles.find(v => v.id === vehicleId);
     if (vehicle) {
       setAppointmentVehicle(vehicle);
     }
   };
 
   const handleReserveVehicle = (vehicleId: string) => {
-    const vehicle = mockVehicles.find(v => v.id === vehicleId);
+    const vehicle = vehicles.find(v => v.id === vehicleId);
     if (vehicle && !vehicle.apartado) {
       setReservationVehicle(vehicle);
     }
   };
 
   const handlePaymentModal = (vehicleId: string) => {
-    const vehicle = mockVehicles.find(v => v.id === vehicleId);
+    const vehicle = vehicles.find(v => v.id === vehicleId);
     if (vehicle && !vehicle.apartado) {
       setPaymentVehicle(vehicle);
     }
@@ -96,6 +103,17 @@ const Index = () => {
   };
 
   const activeFiltersCount = Object.values(filters).filter(Boolean).length + (searchTerm ? 1 : 0);
+
+  if (vehiclesLoading || auctionsLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+        <Header />
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-automotive-blue"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
@@ -143,6 +161,8 @@ const Index = () => {
             onClearFilters={clearFilters}
             isOpen={isFilterOpen}
             onClose={() => setIsFilterOpen(false)}
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
           />
           
           {/* Backdrop for mobile */}
@@ -213,17 +233,22 @@ const Index = () => {
                 
                 <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                   {auctionVehicles.map((vehicle) => {
-                    const auction = mockAuctions.find(a => a.vehicleId === vehicle.id);
+                    const auction = auctions.find(a => a.vehicle_id === vehicle.id);
                     return (
                       <div key={vehicle.id} className="space-y-4">
                         <VehicleCard
-                          vehicle={vehicle}
+                          vehicle={{
+                            ...vehicle,
+                            enSubasta: vehicle.en_subasta,
+                            precio: Number(vehicle.precio),
+                            caracteristicas: vehicle.caracteristicas || []
+                          }}
                           showAuctionInfo={true}
                           onBid={handleBidOnAuction}
                         />
                         {auction && (
                           <AuctionTimer
-                            endTime={auction.fechaFin}
+                            endTime={auction.fecha_fin}
                           />
                         )}
                       </div>
@@ -249,7 +274,12 @@ const Index = () => {
                   {regularVehicles.map((vehicle) => (
                     <VehicleCard
                       key={vehicle.id}
-                      vehicle={vehicle}
+                      vehicle={{
+                        ...vehicle,
+                        enSubasta: vehicle.en_subasta,
+                        precio: Number(vehicle.precio),
+                        caracteristicas: vehicle.caracteristicas || []
+                      }}
                       onReserve={handleReserveVehicle}
                       onSchedule={handleScheduleAppointment}
                       onPayment={handlePaymentModal}
@@ -307,7 +337,7 @@ const Index = () => {
             <ReservationForm
               vehicleId={reservationVehicle.id}
               vehicleName={`${reservationVehicle.marca} ${reservationVehicle.modelo}`}
-              vehiclePrice={reservationVehicle.precio}
+              vehiclePrice={Number(reservationVehicle.precio)}
               onClose={() => setReservationVehicle(null)}
             />
           )}
@@ -321,7 +351,7 @@ const Index = () => {
           onClose={() => setPaymentVehicle(null)}
           vehicleId={paymentVehicle.id}
           vehicleName={`${paymentVehicle.marca} ${paymentVehicle.modelo}`}
-          vehiclePrice={paymentVehicle.precio}
+          vehiclePrice={Number(paymentVehicle.precio)}
         />
       )}
     </div>
