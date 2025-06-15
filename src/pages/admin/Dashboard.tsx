@@ -1,3 +1,4 @@
+
 import { Car, TrendingUp, Clock, MapPin, Users, DollarSign, Package, Target } from 'lucide-react';
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -108,10 +109,19 @@ const AdminDashboard = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
               <Button onClick={() => window.location.href = '/admin/inventory'} className="btn-premium h-auto p-4 flex-col space-y-2">
                 <Car className="h-8 w-8" />
                 <span>Gestionar Inventario</span>
+              </Button>
+              
+              <Button 
+                onClick={() => window.location.href = '/admin/active-auctions'}
+                variant="outline" 
+                className="h-auto p-4 flex-col space-y-2 hover:bg-red-600 hover:text-white"
+              >
+                <Clock className="h-8 w-8" />
+                <span>Subastas Activas</span>
               </Button>
               
               <Button 
@@ -119,7 +129,7 @@ const AdminDashboard = () => {
                 variant="outline" 
                 className="h-auto p-4 flex-col space-y-2 hover:bg-automotive-blue hover:text-white"
               >
-                <Clock className="h-8 w-8" />
+                <Package className="h-8 w-8" />
                 <span>Inventario Subastas</span>
               </Button>
               
