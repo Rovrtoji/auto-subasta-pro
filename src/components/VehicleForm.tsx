@@ -64,6 +64,9 @@ const VehicleForm = ({ onClose, onSuccess }: VehicleFormProps) => {
 
   const onSubmit = async (data: VehicleFormData) => {
     try {
+      console.log('Form data:', data);
+      console.log('Uploaded images:', uploadedImages);
+      
       // Determinar si va en subasta o no según el tipo de venta
       const enSubasta = data.tipo_venta === 'subasta';
       
@@ -84,6 +87,8 @@ const VehicleForm = ({ onClose, onSuccess }: VehicleFormProps) => {
         imageUrls: uploadedImages,
       };
 
+      console.log('Vehicle data to submit:', vehicleData);
+
       await createVehicle.mutateAsync(vehicleData);
       
       toast.success('Vehículo creado exitosamente');
@@ -96,6 +101,7 @@ const VehicleForm = ({ onClose, onSuccess }: VehicleFormProps) => {
   };
 
   const handleImagesChange = (images: string[]) => {
+    console.log('Images changed:', images);
     setUploadedImages(images);
   };
 

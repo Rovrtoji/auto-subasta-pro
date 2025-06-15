@@ -30,6 +30,8 @@ export const useImageUpload = () => {
       const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
       const filePath = `vehicles/${fileName}`;
 
+      console.log('Uploading file to path:', filePath);
+
       // Subir archivo a Supabase Storage
       const { error: uploadError } = await supabase.storage
         .from('vehicle-images')
@@ -40,16 +42,21 @@ export const useImageUpload = () => {
 
       if (uploadError) {
         console.error('Error uploading file:', uploadError);
-        toast.error('Error al subir la imagen');
+        toast.error('Error al subir la imagen: ' + uploadError.message);
         return null;
       }
+
+      console.log('File uploaded successfully');
 
       // Obtener URL pública
       const { data } = supabase.storage
         .from('vehicle-images')
         .getPublicUrl(filePath);
 
+      console.log('Public URL:', data.publicUrl);
+
       setUploadProgress(100);
+      toast.success('Imagen subida exitosamente');
       return data.publicUrl;
 
     } catch (error) {
