@@ -13,7 +13,7 @@ interface ChatMessage {
 interface ChatRoom {
   id: string;
   clientName: string;
-  created_at: string;
+  createdAt: string;
 }
 
 interface ChatState {
@@ -73,8 +73,14 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       .from('chat_rooms')
       .select('*')
       .order('created_at', { ascending: false });
-    if (error) return;
-    dispatch({ type: 'SET_ROOMS', payload: data as ChatRoom[] });
+    if (error || !data) return;
+    // Convertimos fields a camelCase manualmente
+    const rooms: ChatRoom[] = data.map((r: any) => ({
+      id: r.id,
+      clientName: r.client_name,
+      createdAt: r.created_at,
+    }));
+    dispatch({ type: 'SET_ROOMS', payload: rooms });
   };
 
   // Cargar mensajes de un room según ID
@@ -84,8 +90,16 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       .select('*')
       .eq('room_id', roomId)
       .order('timestamp', { ascending: true });
-    if (error) return;
-    dispatch({ type: 'SET_MESSAGES', payload: data as ChatMessage[] });
+    if (error || !data) return;
+    const messages: ChatMessage[] = data.map((m: any) => ({
+      id: m.id,
+      text: m.text,
+      sender: m.sender,
+      timestamp: m.timestamp,
+      clientName: m.client_name,
+      roomId: m.room_id,
+    }));
+    dispatch({ type: 'SET_MESSAGES', payload: messages });
   };
 
   // Crear un nuevo room
@@ -95,9 +109,14 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       .insert({ client_name: clientName })
       .select()
       .single();
-    if (error) throw error;
+    if (error || !data) throw error;
     await refreshRooms();
-    return data as ChatRoom;
+    const room: ChatRoom = {
+      id: data.id,
+      clientName: data.client_name,
+      createdAt: data.created_at,
+    };
+    return room;
   };
 
   // Enviar un mensaje

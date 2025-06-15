@@ -12,7 +12,6 @@ const ChatCenter = () => {
   const [message, setMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Al seleccionar un room, cargar sus mensajes de Supabase
   useEffect(() => {
     if (state.selectedRoom) {
       refreshMessages(state.selectedRoom);
@@ -38,35 +37,8 @@ const ChatCenter = () => {
     refreshMessages(roomId);
   };
 
-  const handleMarkResolved = () => {
-    if (!state.selectedRoom) return;
-    
-    dispatch({
-      type: 'UPDATE_ROOM_STATUS',
-      payload: {
-        roomId: state.selectedRoom,
-        status: 'resolved'
-      }
-    });
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'bg-green-500';
-      case 'waiting': return 'bg-yellow-500';
-      case 'resolved': return 'bg-gray-500';
-      default: return 'bg-gray-500';
-    }
-  };
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'active': return 'Activo';
-      case 'waiting': return 'Esperando';
-      case 'resolved': return 'Resuelto';
-      default: return 'Desconocido';
-    }
-  };
+  // Ya no existe status/resolved, así que no hacemos nada en handleMarkResolved
+  // const handleMarkResolved = () => {};
 
   const selectedRoomData = state.rooms.find(room => room.id === state.selectedRoom);
   const currentMessages = state.messages || [];
@@ -78,11 +50,8 @@ const ChatCenter = () => {
         <div className="p-4 border-b bg-white">
           <h3 className="font-semibold text-lg flex items-center gap-2">
             <Users className="h-5 w-5 text-automotive-blue" />
-            Chats Activos
+            Chats
           </h3>
-          <p className="text-sm text-gray-600 mt-1">
-            {state.rooms.filter(room => room.status === 'waiting').length} esperando respuesta
-          </p>
         </div>
         
         <ScrollArea className="h-[calc(600px-80px)]">
@@ -90,7 +59,7 @@ const ChatCenter = () => {
             {state.rooms.length === 0 ? (
               <div className="p-4 text-center text-gray-500">
                 <MessageCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">No hay chats activos</p>
+                <p className="text-sm">No hay chats</p>
                 <p className="text-xs mt-1">Los nuevos chats aparecerán aquí</p>
               </div>
             ) : (
@@ -106,26 +75,8 @@ const ChatCenter = () => {
                 >
                   <div className="flex items-center justify-between mb-1">
                     <h4 className="font-medium text-sm">{room.clientName}</h4>
-                    <div className="flex items-center gap-2">
-                      {room.unreadCount > 0 && (
-                        <Badge variant="destructive" className="text-xs px-1.5 py-0.5">
-                          {room.unreadCount}
-                        </Badge>
-                      )}
-                      <span className="text-xs opacity-75">{room.timestamp}</span>
-                    </div>
-                  </div>
-                  <p className={`text-xs truncate ${
-                    state.selectedRoom === room.id ? 'text-gray-200' : 'text-gray-600'
-                  }`}>
-                    {room.lastMessage}
-                  </p>
-                  <div className="flex items-center gap-1 mt-2">
-                    <div className={`w-2 h-2 rounded-full ${getStatusColor(room.status)}`} />
-                    <span className={`text-xs ${
-                      state.selectedRoom === room.id ? 'text-gray-200' : 'text-gray-500'
-                    }`}>
-                      {getStatusText(room.status)}
+                    <span className="text-xs opacity-75">
+                      {new Date(room.createdAt).toLocaleString()}
                     </span>
                   </div>
                 </div>
@@ -145,22 +96,11 @@ const ChatCenter = () => {
                 <div>
                   <h3 className="font-semibold">{selectedRoomData.clientName}</h3>
                   <div className="flex items-center gap-2 mt-1">
-                    <div className={`w-2 h-2 rounded-full ${getStatusColor(selectedRoomData.status)}`} />
                     <span className="text-sm text-gray-600">
-                      {getStatusText(selectedRoomData.status)}
+                      Iniciado: {new Date(selectedRoomData.createdAt).toLocaleString()}
                     </span>
                   </div>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleMarkResolved}
-                  disabled={selectedRoomData.status === 'resolved'}
-                  className="flex items-center gap-2"
-                >
-                  <CheckCircle2 className="h-4 w-4" />
-                  Marcar Resuelto
-                </Button>
               </div>
             </div>
 
@@ -183,7 +123,7 @@ const ChatCenter = () => {
                       <p className={`text-xs mt-1 ${
                         msg.sender === 'admin' ? 'text-gray-200' : 'text-gray-500'
                       }`}>
-                        {msg.timestamp}
+                        {new Date(msg.timestamp).toLocaleString()}
                       </p>
                     </div>
                   </div>

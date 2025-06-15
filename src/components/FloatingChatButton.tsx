@@ -71,7 +71,7 @@ const FloatingChatButton = () => {
                 <>
                   {/* Área de mensajes */}
                   <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                    <FloatingChatMessageList clientName={clientName} messages={currentMessages}/>
+                    <FloatingChatMessageList clientName={clientName} messages={currentMessages} />
                   </div>
                   {/* Input del mensaje */}
                   <FloatingChatMessageInput

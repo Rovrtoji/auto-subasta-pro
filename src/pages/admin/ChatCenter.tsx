@@ -1,4 +1,3 @@
-
 import { MessageCircle, Users, Clock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Header from '../../components/Header';
@@ -9,10 +8,10 @@ import { useChat } from '@/contexts/ChatContext';
 const AdminChatCenter = () => {
   const { state } = useChat();
 
-  const activeChats = state.rooms.filter(room => room.status === 'active').length;
-  const waitingChats = state.rooms.filter(room => room.status === 'waiting').length;
-  const resolvedToday = state.rooms.filter(room => room.status === 'resolved').length;
-  const totalUnread = state.rooms.reduce((total, room) => total + room.unreadCount, 0);
+  const activeChats = state.rooms.length;
+  const waitingChats = 0;
+  const resolvedToday = 0;
+  const totalUnread = 0;
 
   const headerStats = [
     { label: 'Chats Activos', value: activeChats },

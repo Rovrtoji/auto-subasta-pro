@@ -2,7 +2,7 @@
 import { MessageCircle } from 'lucide-react';
 
 interface Message {
-  id?: number;
+  id?: string;
   text: string;
   sender: 'admin' | 'client';
   timestamp: string;
@@ -26,7 +26,7 @@ const FloatingChatMessageList = ({ clientName, messages }: Props) => {
     <>
       {messages.map(msg => (
         <div
-          key={msg.id ?? Math.random()}
+          key={msg.id ?? Math.random().toString()}
           className={`flex ${msg.sender === 'admin' ? 'justify-start' : 'justify-end'}`}
         >
           <div
@@ -40,7 +40,7 @@ const FloatingChatMessageList = ({ clientName, messages }: Props) => {
             <div className={`text-xs mt-1 ${
               msg.sender === 'admin' ? 'text-gray-500' : 'text-gray-200'
             }`}>
-              {msg.timestamp}
+              {new Date(msg.timestamp).toLocaleString()}
             </div>
           </div>
         </div>
