@@ -89,6 +89,7 @@ export const useFloatingChat = () => {
 
   return {
     state,
+    dispatch, // <-- Return dispatch here!
     step,
     message,
     setMessage,

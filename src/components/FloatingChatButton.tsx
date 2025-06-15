@@ -12,6 +12,7 @@ import { useFloatingChat } from '@/hooks/useFloatingChat';
 const FloatingChatButton = () => {
   const {
     state,
+    dispatch,
     step,
     message,
     setMessage,
@@ -86,7 +87,7 @@ const FloatingChatButton = () => {
       )}
       {/* Botón flotante */}
       <Button
-        onClick={() => state.dispatch({ type: 'TOGGLE_FLOATING_CHAT' })}
+        onClick={() => dispatch({ type: 'TOGGLE_FLOATING_CHAT' })}
         className="fixed bottom-4 right-4 z-50 h-14 w-14 rounded-full bg-automotive-blue hover:bg-automotive-blue/80 shadow-lg hover:shadow-xl transition-all duration-300"
         size="icon"
       >
