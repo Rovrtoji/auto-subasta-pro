@@ -1,29 +1,35 @@
 
 import { useState } from 'react';
-import { Car, Plus, Filter, Search, Edit, Trash2, Eye, ArrowLeft } from 'lucide-react';
+import { useVehicles, useUpdateVehicle } from '@/hooks/useVehicles';
+import { useDeleteVehicle } from '@/hooks/useDeleteVehicle';
+import Header from '@/components/Header';
+import VehicleForm from '@/components/VehicleForm';
+import VehicleEditForm from '@/components/VehicleEditForm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import Header from '../../components/Header';
-import VehicleForm from '../../components/VehicleForm';
-import VehicleEditForm from '../../components/VehicleEditForm';
-import { useVehicles } from '@/hooks/useVehicles';
-import { useDeleteVehicle } from '@/hooks/useDeleteVehicle';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Car, Plus, Search, MoreVertical, Edit, Trash2, Package, DollarSign, Clock, Eye } from 'lucide-react';
+import { toast } from 'sonner';
 
-const AdminInventory = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [selectedVehicle, setSelectedVehicle] = useState<any>(null);
-  const [editingVehicle, setEditingVehicle] = useState<any>(null);
-  const [vehicleToDelete, setVehicleToDelete] = useState<any>(null);
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  
-  const { data: vehicles, isLoading, refetch } = useVehicles();
+const Inventory = () => {
+  const { data: vehicles = [], isLoading } = useVehicles();
+  const updateVehicle = useUpdateVehicle();
   const deleteVehicle = useDeleteVehicle();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [editingVehicle, setEditingVehicle] = useState<any>(null);
+
+  // Filtrar solo vehículos de venta directa (no en subasta)
+  const directSaleVehicles = vehicles.filter(vehicle => !vehicle.en_subasta);
+
+  const filteredVehicles = directSaleVehicles.filter(vehicle =>
+    vehicle.marca?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    vehicle.modelo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    vehicle.año?.toString().includes(searchTerm)
+  );
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('es-MX', {
@@ -33,345 +39,253 @@ const AdminInventory = () => {
     }).format(price);
   };
 
-  const filteredVehicles = vehicles?.filter(vehicle => {
-    const matchesSearch = 
-      vehicle.marca.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      vehicle.modelo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      vehicle.color.toLowerCase().includes(searchTerm.toLowerCase());
-
-    if (filterStatus === 'all') return matchesSearch;
-    if (filterStatus === 'disponible') return matchesSearch && !vehicle.apartado && !vehicle.en_subasta;
-    if (filterStatus === 'apartado') return matchesSearch && vehicle.apartado;
-    if (filterStatus === 'subasta') return matchesSearch && vehicle.en_subasta;
-    
-    return matchesSearch;
-  }) || [];
-
-  const getStatusBadge = (vehicle: any) => {
-    if (vehicle.apartado) {
-      return <Badge className="bg-yellow-500">Apartado</Badge>;
+  const handleStatusChange = async (vehicleId: string, newStatus: string) => {
+    try {
+      const updates = {
+        apartado: newStatus === 'apartado',
+      };
+      
+      await updateVehicle.mutateAsync({ id: vehicleId, updates });
+      toast.success('Estado actualizado exitosamente');
+    } catch (error) {
+      console.error('Error updating status:', error);
+      toast.error('Error al actualizar el estado');
     }
-    if (vehicle.en_subasta) {
-      return <Badge className="bg-red-500">En Subasta</Badge>;
-    }
-    return <Badge className="bg-green-500">Disponible</Badge>;
   };
 
-  const handleCreateSuccess = () => {
-    refetch();
-  };
-
-  const handleEditSuccess = () => {
-    refetch();
-  };
-
-  const handleDeleteVehicle = async () => {
-    if (vehicleToDelete) {
-      await deleteVehicle.mutateAsync(vehicleToDelete.id);
-      setVehicleToDelete(null);
+  const handleDelete = async (vehicleId: string) => {
+    if (window.confirm('¿Estás seguro de que quieres eliminar este vehículo?')) {
+      try {
+        await deleteVehicle.mutateAsync(vehicleId);
+        toast.success('Vehículo eliminado exitosamente');
+      } catch (error) {
+        console.error('Error deleting vehicle:', error);
+        toast.error('Error al eliminar el vehículo');
+      }
     }
   };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      <div className="min-h-screen bg-gray-50">
         <Header />
-        <div className="container py-8">
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center space-y-2">
-              <Car className="h-8 w-8 text-automotive-blue mx-auto animate-pulse" />
-              <p>Cargando inventario...</p>
-            </div>
-          </div>
+        <div className="flex justify-center items-center h-64">
+          <div className="text-lg">Cargando inventario...</div>
         </div>
       </div>
     );
   }
 
+  const availableVehicles = directSaleVehicles.filter(v => !v.apartado);
+  const reservedVehicles = directSaleVehicles.filter(v => v.apartado);
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-gray-50">
       <Header />
       
-      {/* Header */}
-      <div className="bg-automotive-gradient text-white py-8">
-        <div className="container">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Button
-                onClick={() => window.location.href = '/admin'}
-                variant="ghost"
-                className="text-white hover:bg-white/20 p-2"
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-              <div>
-                <h1 className="text-3xl font-bold flex items-center gap-3">
-                  <Car className="h-8 w-8" />
-                  Gestión de Inventario
-                </h1>
-                <p className="text-gray-200 mt-2">Administra todos los vehículos del inventario</p>
-              </div>
+      <div className="container mx-auto px-4 py-8">
+        <div className="mb-8">
+          <div className="flex justify-between items-center mb-4">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                Inventario - Venta Directa
+              </h1>
+              <p className="text-gray-600">
+                Gestiona vehículos disponibles para venta directa
+              </p>
             </div>
-            <div className="text-right">
-              <div className="text-2xl font-bold">{vehicles?.length || 0}</div>
-              <div className="text-sm text-gray-200">Vehículos Totales</div>
-            </div>
+            <Button 
+              onClick={() => setShowCreateForm(true)}
+              className="bg-automotive-blue hover:bg-automotive-blue/90"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Agregar Vehículo
+            </Button>
           </div>
         </div>
-      </div>
 
-      <div className="container py-8">
-        {/* Controls */}
-        <Card className="border-0 shadow-lg automotive-card mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>Filtros y Búsqueda</span>
-              <Button 
-                className="btn-premium"
-                onClick={() => setShowCreateForm(true)}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Agregar Vehículo
-              </Button>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Buscar por marca, modelo o color..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant={filterStatus === 'all' ? 'default' : 'outline'}
-                  onClick={() => setFilterStatus('all')}
-                  size="sm"
-                >
-                  Todos
-                </Button>
-                <Button
-                  variant={filterStatus === 'disponible' ? 'default' : 'outline'}
-                  onClick={() => setFilterStatus('disponible')}
-                  size="sm"
-                >
-                  Disponibles
-                </Button>
-                <Button
-                  variant={filterStatus === 'apartado' ? 'default' : 'outline'}
-                  onClick={() => setFilterStatus('apartado')}
-                  size="sm"
-                >
-                  Apartados
-                </Button>
-                <Button
-                  variant={filterStatus === 'subasta' ? 'default' : 'outline'}
-                  onClick={() => setFilterStatus('subasta')}
-                  size="sm"
-                >
-                  En Subasta
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Búsqueda */}
+        <div className="mb-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Buscar por marca, modelo o año..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </div>
 
-        {/* Vehicles Table */}
-        <Card className="border-0 shadow-lg automotive-card">
-          <CardHeader>
-            <CardTitle>
-              Inventario ({filteredVehicles.length} vehículos)
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Vehículo</TableHead>
-                  <TableHead>Detalles</TableHead>
-                  <TableHead>Precio</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead>Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredVehicles.map((vehicle) => (
-                  <TableRow key={vehicle.id}>
-                    <TableCell>
-                      <div className="flex items-center space-x-3">
-                        <img
-                          src={vehicle.imagen || '/placeholder.svg'}
-                          alt={`${vehicle.marca} ${vehicle.modelo}`}
-                          className="w-12 h-12 object-cover rounded-lg"
-                        />
-                        <div>
-                          <p className="font-semibold">
-                            {vehicle.marca} {vehicle.modelo}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            {vehicle.año} • {vehicle.color}
-                          </p>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm space-y-1">
-                        <p><span className="font-medium">KM:</span> {vehicle.kilometraje?.toLocaleString()}</p>
-                        <p><span className="font-medium">Transmisión:</span> {vehicle.transmision}</p>
-                        <p><span className="font-medium">Combustible:</span> {vehicle.combustible}</p>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-right">
-                        <p className="text-lg font-bold text-automotive-gold">
-                          {formatPrice(vehicle.precio)}
-                        </p>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {getStatusBadge(vehicle)}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setSelectedVehicle(vehicle)}
-                          title="Ver detalles"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => setEditingVehicle(vehicle)}
-                          title="Editar vehículo"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => setVehicleToDelete(vehicle)}
-                          title="Eliminar vehículo"
-                          className="hover:bg-red-50 hover:text-red-600"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      </div>
+        {/* Estadísticas */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Venta Directa</CardTitle>
+              <Package className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{directSaleVehicles.length}</div>
+            </CardContent>
+          </Card>
 
-      {/* Vehicle Details Modal */}
-      <Dialog open={!!selectedVehicle} onOpenChange={() => setSelectedVehicle(null)}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Detalles del Vehículo</DialogTitle>
-          </DialogHeader>
-          {selectedVehicle && (
-            <div className="space-y-4">
-              <div className="aspect-video w-full overflow-hidden rounded-lg">
-                <img
-                  src={selectedVehicle.imagen || '/placeholder.svg'}
-                  alt={`${selectedVehicle.marca} ${selectedVehicle.modelo}`}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h3 className="font-semibold text-lg">
-                    {selectedVehicle.marca} {selectedVehicle.modelo}
-                  </h3>
-                  <p className="text-muted-foreground">{selectedVehicle.año}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-2xl font-bold text-automotive-gold">
-                    {formatPrice(selectedVehicle.precio)}
-                  </p>
-                  {getStatusBadge(selectedVehicle)}
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="space-y-2">
-                  <p><span className="font-medium">Kilometraje:</span> {selectedVehicle.kilometraje?.toLocaleString()} km</p>
-                  <p><span className="font-medium">Transmisión:</span> {selectedVehicle.transmision}</p>
-                  <p><span className="font-medium">Combustible:</span> {selectedVehicle.combustible}</p>
-                </div>
-                <div className="space-y-2">
-                  <p><span className="font-medium">Color:</span> {selectedVehicle.color}</p>
-                  <p><span className="font-medium">Estado:</span> {selectedVehicle.estado_general}</p>
-                  <p><span className="font-medium">Tipo:</span> {selectedVehicle.en_subasta ? 'Subasta' : 'Venta Directa'}</p>
-                </div>
-              </div>
-              {selectedVehicle.descripcion && (
-                <div>
-                  <h4 className="font-medium mb-2">Descripción</h4>
-                  <p className="text-sm text-muted-foreground">{selectedVehicle.descripcion}</p>
-                </div>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Disponibles</CardTitle>
+              <Eye className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">{availableVehicles.length}</div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Apartados</CardTitle>
+              <Clock className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-yellow-600">{reservedVehicles.length}</div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Lista de Vehículos */}
+        {filteredVehicles.length === 0 ? (
+          <Card>
+            <CardContent className="p-8 text-center">
+              <p className="text-gray-500 text-lg mb-4">
+                {searchTerm ? 'No se encontraron vehículos que coincidan con tu búsqueda.' : 'No hay vehículos de venta directa en el inventario.'}
+              </p>
+              {!searchTerm && (
+                <Button 
+                  onClick={() => setShowCreateForm(true)}
+                  className="bg-automotive-blue hover:bg-automotive-blue/90"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Agregar Primer Vehículo
+                </Button>
               )}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredVehicles.map((vehicle) => {
+              const imageUrl = vehicle.imagenes?.[0] || vehicle.imagen || '/placeholder.svg';
+              
+              return (
+                <Card key={vehicle.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                  <div className="relative">
+                    <img
+                      src={imageUrl}
+                      alt={`${vehicle.marca} ${vehicle.modelo}`}
+                      className="w-full h-48 object-cover"
+                      onError={(e) => {
+                        console.log('Image failed to load:', imageUrl);
+                        e.currentTarget.src = '/placeholder.svg';
+                      }}
+                    />
+                    <Badge 
+                      className={`absolute top-2 right-2 ${
+                        vehicle.apartado ? 'bg-yellow-500' : 'bg-green-500'
+                      }`}
+                    >
+                      {vehicle.apartado ? 'Apartado' : 'Disponible'}
+                    </Badge>
+                    
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="absolute top-2 left-2 h-8 w-8 p-0 bg-white/80 hover:bg-white"
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start">
+                        <DropdownMenuItem onClick={() => setEditingVehicle(vehicle)}>
+                          <Edit className="h-4 w-4 mr-2" />
+                          Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => handleStatusChange(
+                            vehicle.id, 
+                            vehicle.apartado ? 'disponible' : 'apartado'
+                          )}
+                        >
+                          <Clock className="h-4 w-4 mr-2" />
+                          {vehicle.apartado ? 'Marcar Disponible' : 'Marcar Apartado'}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => handleDelete(vehicle.id)}
+                          className="text-red-600"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Eliminar
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                  
+                  <CardContent className="p-4">
+                    <h3 className="text-lg font-semibold mb-2">
+                      {vehicle.marca} {vehicle.modelo} {vehicle.año}
+                    </h3>
+                    
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Precio:</span>
+                        <span className="font-medium">
+                          {formatPrice(vehicle.precio)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Kilometraje:</span>
+                        <span>{vehicle.kilometraje?.toLocaleString()} km</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Estado:</span>
+                        <span>{vehicle.estado_general}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Transmisión:</span>
+                        <span>{vehicle.transmision}</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
-      {/* Create Vehicle Modal */}
+      {/* Modal para crear vehículo */}
       <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <VehicleForm 
-            onClose={() => setShowCreateForm(false)} 
-            onSuccess={handleCreateSuccess}
+            onClose={() => setShowCreateForm(false)}
+            onSuccess={() => setShowCreateForm(false)}
+            forAuction={false}
           />
         </DialogContent>
       </Dialog>
 
-      {/* Edit Vehicle Modal */}
+      {/* Modal para editar vehículo */}
       <Dialog open={!!editingVehicle} onOpenChange={() => setEditingVehicle(null)}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           {editingVehicle && (
             <VehicleEditForm 
               vehicle={editingVehicle}
-              onClose={() => setEditingVehicle(null)} 
-              onSuccess={handleEditSuccess}
+              onClose={() => setEditingVehicle(null)}
+              onSuccess={() => setEditingVehicle(null)}
             />
           )}
         </DialogContent>
       </Dialog>
-
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={!!vehicleToDelete} onOpenChange={() => setVehicleToDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta acción no se puede deshacer. Esto eliminará permanentemente el vehículo
-              {vehicleToDelete && ` ${vehicleToDelete.marca} ${vehicleToDelete.modelo} ${vehicleToDelete.año}`} 
-              y todos sus datos asociados.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleDeleteVehicle}
-              className="bg-red-600 hover:bg-red-700"
-              disabled={deleteVehicle.isPending}
-            >
-              {deleteVehicle.isPending ? 'Eliminando...' : 'Eliminar'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 };
 
-export default AdminInventory;
+export default Inventory;

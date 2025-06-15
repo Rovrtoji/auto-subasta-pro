@@ -9,8 +9,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
 import { useCreateVehicle } from '@/hooks/useVehicles';
 import { useImageUpload } from '@/hooks/useImageUpload';
 import ImageUploader from '@/components/ImageUploader';
@@ -28,9 +26,6 @@ const vehicleSchema = z.object({
   color: z.string().min(1, 'El color es requerido'),
   estado_general: z.string().min(1, 'El estado general es requerido'),
   descripcion: z.string().optional(),
-  tipo_venta: z.enum(['venta_directa', 'subasta'], {
-    required_error: 'Debes seleccionar el tipo de venta',
-  }),
 });
 
 type VehicleFormData = z.infer<typeof vehicleSchema>;
@@ -38,9 +33,10 @@ type VehicleFormData = z.infer<typeof vehicleSchema>;
 interface VehicleFormProps {
   onClose: () => void;
   onSuccess?: () => void;
+  forAuction?: boolean;
 }
 
-const VehicleForm = ({ onClose, onSuccess }: VehicleFormProps) => {
+const VehicleForm = ({ onClose, onSuccess, forAuction = false }: VehicleFormProps) => {
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const { uploadMultipleImages, isUploading } = useImageUpload();
   const createVehicle = useCreateVehicle();
@@ -58,7 +54,6 @@ const VehicleForm = ({ onClose, onSuccess }: VehicleFormProps) => {
       color: '',
       estado_general: 'Bueno',
       descripcion: '',
-      tipo_venta: 'venta_directa',
     },
   });
 
@@ -66,11 +61,8 @@ const VehicleForm = ({ onClose, onSuccess }: VehicleFormProps) => {
     try {
       console.log('Form data:', data);
       console.log('Uploaded images:', uploadedImages);
+      console.log('For auction:', forAuction);
       
-      // Determinar si va en subasta o no según el tipo de venta
-      const enSubasta = data.tipo_venta === 'subasta';
-      
-      // Asegurar que todos los campos requeridos están presentes
       const vehicleData = {
         marca: data.marca,
         modelo: data.modelo,
@@ -82,7 +74,7 @@ const VehicleForm = ({ onClose, onSuccess }: VehicleFormProps) => {
         color: data.color,
         estado_general: data.estado_general,
         descripcion: data.descripcion || '',
-        en_subasta: enSubasta,
+        en_subasta: false, // Los vehículos se crean siempre como no en subasta inicialmente
         apartado: false,
         imageUrls: uploadedImages,
       };
@@ -91,7 +83,11 @@ const VehicleForm = ({ onClose, onSuccess }: VehicleFormProps) => {
 
       await createVehicle.mutateAsync(vehicleData);
       
-      toast.success('Vehículo creado exitosamente');
+      const message = forAuction 
+        ? 'Vehículo creado exitosamente. Ahora puedes crear una subasta para este vehículo.'
+        : 'Vehículo creado exitosamente para venta directa';
+      
+      toast.success(message);
       onSuccess?.();
       onClose();
     } catch (error) {
@@ -108,39 +104,18 @@ const VehicleForm = ({ onClose, onSuccess }: VehicleFormProps) => {
   return (
     <Card className="w-full max-w-2xl">
       <CardHeader>
-        <CardTitle>Agregar Nuevo Vehículo</CardTitle>
+        <CardTitle>
+          {forAuction ? 'Agregar Vehículo para Subasta' : 'Agregar Vehículo - Venta Directa'}
+        </CardTitle>
+        {forAuction && (
+          <p className="text-sm text-muted-foreground">
+            Este vehículo será agregado al inventario y estará disponible para crear subastas.
+          </p>
+        )}
       </CardHeader>
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* Tipo de Venta */}
-            <FormField
-              control={form.control}
-              name="tipo_venta"
-              render={({ field }) => (
-                <FormItem className="space-y-3">
-                  <FormLabel>Tipo de Venta</FormLabel>
-                  <FormControl>
-                    <RadioGroup
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                      className="flex flex-col space-y-1"
-                    >
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="venta_directa" id="venta_directa" />
-                        <Label htmlFor="venta_directa">Venta Directa</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="subasta" id="subasta" />
-                        <Label htmlFor="subasta">Subasta</Label>
-                      </div>
-                    </RadioGroup>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -353,7 +328,7 @@ const VehicleForm = ({ onClose, onSuccess }: VehicleFormProps) => {
                 {createVehicle.isPending && (
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 )}
-                Crear Vehículo
+                {forAuction ? 'Crear Vehículo para Subasta' : 'Crear Vehículo'}
               </Button>
             </div>
           </form>

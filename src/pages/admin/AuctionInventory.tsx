@@ -3,13 +3,14 @@ import { useState } from 'react';
 import { useVehicles } from '@/hooks/useVehicles';
 import { useCreateAuction } from '@/hooks/useCreateAuction';
 import Header from '@/components/Header';
+import AuctionVehicleForm from '@/components/AuctionVehicleForm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Calendar, Clock, DollarSign, Car, Search } from 'lucide-react';
+import { Calendar, Clock, DollarSign, Car, Search, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 
 const AuctionInventory = () => {
@@ -17,6 +18,7 @@ const AuctionInventory = () => {
   const createAuction = useCreateAuction();
   const [selectedVehicle, setSelectedVehicle] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showCreateForm, setShowCreateForm] = useState(false);
   const [auctionData, setAuctionData] = useState({
     precioInicial: '',
     fechaInicio: '',
@@ -98,12 +100,23 @@ const AuctionInventory = () => {
       
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">
-            Inventario para Subastas
-          </h1>
-          <p className="text-gray-600">
-            Selecciona vehículos disponibles para crear nuevas subastas
-          </p>
+          <div className="flex justify-between items-center mb-4">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                Inventario para Subastas
+              </h1>
+              <p className="text-gray-600">
+                Gestiona vehículos destinados a subastas y crea nuevas subastas
+              </p>
+            </div>
+            <Button 
+              onClick={() => setShowCreateForm(true)}
+              className="bg-automotive-blue hover:bg-automotive-blue/90"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Crear Vehículo y Subasta
+            </Button>
+          </div>
         </div>
 
         {/* Búsqueda */}
@@ -158,9 +171,16 @@ const AuctionInventory = () => {
         {availableVehicles.length === 0 ? (
           <Card>
             <CardContent className="p-8 text-center">
-              <p className="text-gray-500 text-lg">
+              <p className="text-gray-500 text-lg mb-4">
                 No hay vehículos disponibles para subasta en este momento.
               </p>
+              <Button 
+                onClick={() => setShowCreateForm(true)}
+                className="bg-automotive-blue hover:bg-automotive-blue/90"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Crear Primer Vehículo
+              </Button>
             </CardContent>
           </Card>
         ) : (
@@ -221,6 +241,16 @@ const AuctionInventory = () => {
           </div>
         )}
       </div>
+
+      {/* Modal para crear vehículo y subasta */}
+      <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <AuctionVehicleForm 
+            onClose={() => setShowCreateForm(false)}
+            onSuccess={() => setShowCreateForm(false)}
+          />
+        </DialogContent>
+      </Dialog>
 
       {/* Modal para crear subasta */}
       <Dialog open={!!selectedVehicle} onOpenChange={() => setSelectedVehicle(null)}>
