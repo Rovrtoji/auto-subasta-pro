@@ -34,8 +34,65 @@ type ChatAction =
   | { type: 'TOGGLE_FLOATING_CHAT'; payload?: boolean }
   | { type: 'SET_UNREAD_COUNT'; payload: { roomId: number; count: number } };
 
+// Datos de ejemplo para demostrar el funcionamiento
 const initialState: ChatState = {
-  rooms: [],
+  rooms: [
+    {
+      id: 1,
+      clientName: 'María González',
+      lastMessage: 'Hola, necesito información sobre un vehículo',
+      timestamp: '14:30',
+      status: 'waiting',
+      unreadCount: 2,
+      messages: [
+        {
+          id: 1,
+          text: 'Hola, necesito información sobre un vehículo',
+          sender: 'client',
+          timestamp: '14:30',
+          clientName: 'María González'
+        },
+        {
+          id: 2,
+          text: '¿Podrían ayudarme con los precios?',
+          sender: 'client',
+          timestamp: '14:31',
+          clientName: 'María González'
+        }
+      ]
+    },
+    {
+      id: 2,
+      clientName: 'Carlos Ruiz',
+      lastMessage: 'Perfecto, muchas gracias por la información',
+      timestamp: '13:45',
+      status: 'resolved',
+      unreadCount: 0,
+      messages: [
+        {
+          id: 3,
+          text: '¿Tienen Toyota Corolla disponible?',
+          sender: 'client',
+          timestamp: '13:40',
+          clientName: 'Carlos Ruiz'
+        },
+        {
+          id: 4,
+          text: 'Sí, tenemos varios modelos disponibles. Te puedo enviar la información.',
+          sender: 'admin',
+          timestamp: '13:42',
+          clientName: 'Carlos Ruiz'
+        },
+        {
+          id: 5,
+          text: 'Perfecto, muchas gracias por la información',
+          sender: 'client',
+          timestamp: '13:45',
+          clientName: 'Carlos Ruiz'
+        }
+      ]
+    }
+  ],
   selectedRoom: null,
   isFloatingChatOpen: false,
 };
@@ -70,7 +127,7 @@ const chatReducer = (state: ChatState, action: ChatAction): ChatState => {
         rooms: state.rooms.map(room => {
           if (room.id === action.payload.roomId) {
             const newMessage: ChatMessage = {
-              id: Date.now(),
+              id: Date.now() + Math.random(), // Asegurar IDs únicos
               ...action.payload.message
             };
             return {

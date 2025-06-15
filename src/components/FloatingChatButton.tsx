@@ -11,23 +11,27 @@ const FloatingChatButton = () => {
   const [message, setMessage] = useState('');
   const [clientName, setClientName] = useState('');
   const [step, setStep] = useState<'name' | 'chat'>('name');
-
-  // Crear una sala temporal para el chat flotante
-  const floatingRoom = state.rooms.find(room => room.clientName === clientName && room.id === -1);
+  const [currentRoomId, setCurrentRoomId] = useState<number | null>(null);
 
   const handleStartChat = () => {
     if (!clientName.trim()) return;
     
-    const welcomeMessage = '¡Hola! ¿En qué puedo ayudarte hoy?';
-    
-    // Crear sala temporal para el chat flotante
+    // Crear la sala inmediatamente con un mensaje de bienvenida del cliente
     dispatch({
       type: 'CREATE_ROOM',
       payload: {
         clientName: clientName,
-        initialMessage: welcomeMessage
+        initialMessage: `Hola, soy ${clientName}. ¿Podrían ayudarme?`
       }
     });
+    
+    // Encontrar la sala recién creada
+    setTimeout(() => {
+      const newRoom = state.rooms.find(room => room.clientName === clientName);
+      if (newRoom) {
+        setCurrentRoomId(newRoom.id);
+      }
+    }, 100);
     
     setStep('chat');
   };
@@ -35,10 +39,11 @@ const FloatingChatButton = () => {
   const handleSendMessage = () => {
     if (!message.trim() || !clientName) return;
     
-    // Buscar o crear la sala para este cliente
+    // Buscar la sala actual del cliente
     let targetRoom = state.rooms.find(room => room.clientName === clientName);
     
     if (!targetRoom) {
+      // Si no existe la sala, crearla con el primer mensaje
       dispatch({
         type: 'CREATE_ROOM',
         payload: {
@@ -46,7 +51,16 @@ const FloatingChatButton = () => {
           initialMessage: message
         }
       });
+      
+      // Establecer el ID de la sala después de crearla
+      setTimeout(() => {
+        const newRoom = state.rooms.find(room => room.clientName === clientName);
+        if (newRoom) {
+          setCurrentRoomId(newRoom.id);
+        }
+      }, 100);
     } else {
+      // Si la sala existe, agregar el mensaje
       dispatch({
         type: 'ADD_MESSAGE',
         payload: {
@@ -59,40 +73,33 @@ const FloatingChatButton = () => {
           }
         }
       });
+      setCurrentRoomId(targetRoom.id);
     }
     
     setMessage('');
-    
-    // Simular respuesta automática después de un momento
-    setTimeout(() => {
-      const currentRoom = state.rooms.find(room => room.clientName === clientName);
-      if (currentRoom) {
-        dispatch({
-          type: 'ADD_MESSAGE',
-          payload: {
-            roomId: currentRoom.id,
-            message: {
-              text: 'Gracias por tu mensaje. Un asesor se pondrá en contacto contigo pronto.',
-              sender: 'admin',
-              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-              clientName: clientName
-            }
-          }
-        });
-      }
-    }, 1000);
   };
 
   const handleClose = () => {
     dispatch({ type: 'TOGGLE_FLOATING_CHAT', payload: false });
-    setStep('name');
-    setMessage('');
+    // No resetear el step y clientName para mantener la conversación
   };
 
-  const currentMessages = state.rooms.find(room => room.clientName === clientName)?.messages || [];
+  // Obtener los mensajes de la sala actual
+  const currentMessages = currentRoomId 
+    ? state.rooms.find(room => room.id === currentRoomId)?.messages || []
+    : state.rooms.find(room => room.clientName === clientName)?.messages || [];
 
   // Contar mensajes no leídos total
   const totalUnreadCount = state.rooms.reduce((total, room) => total + room.unreadCount, 0);
+
+  // Resetear cuando se cierra completamente el chat
+  const handleReset = () => {
+    setStep('name');
+    setClientName('');
+    setMessage('');
+    setCurrentRoomId(null);
+    dispatch({ type: 'TOGGLE_FLOATING_CHAT', payload: false });
+  };
 
   return (
     <>
@@ -102,15 +109,30 @@ const FloatingChatButton = () => {
           <Card className="h-full flex flex-col">
             <CardHeader className="bg-automotive-blue text-white rounded-t-lg p-4">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">Chat de Ayuda</CardTitle>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleClose}
-                  className="text-white hover:bg-white/20 p-1 h-8 w-8"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+                <CardTitle className="text-lg">
+                  {step === 'chat' ? `Chat - ${clientName}` : 'Chat de Ayuda'}
+                </CardTitle>
+                <div className="flex gap-1">
+                  {step === 'chat' && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleReset}
+                      className="text-white hover:bg-white/20 p-1 h-8 w-8"
+                      title="Nueva conversación"
+                    >
+                      <MessageCircle className="h-4 w-4" />
+                    </Button>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleClose}
+                    className="text-white hover:bg-white/20 p-1 h-8 w-8"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             
@@ -140,27 +162,34 @@ const FloatingChatButton = () => {
                 <>
                   {/* Messages Area */}
                   <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                    {currentMessages.map((msg) => (
-                      <div
-                        key={msg.id}
-                        className={`flex ${msg.sender === 'admin' ? 'justify-start' : 'justify-end'}`}
-                      >
+                    {currentMessages.length === 0 ? (
+                      <div className="text-center text-gray-500 mt-8">
+                        <p className="text-sm">¡Hola {clientName}!</p>
+                        <p className="text-xs mt-2">Escribe tu mensaje y un asesor te atenderá pronto.</p>
+                      </div>
+                    ) : (
+                      currentMessages.map((msg) => (
                         <div
-                          className={`max-w-[80%] p-3 rounded-lg text-sm ${
-                            msg.sender === 'admin'
-                              ? 'bg-gray-100 text-gray-800'
-                              : 'bg-automotive-blue text-white'
-                          }`}
+                          key={msg.id}
+                          className={`flex ${msg.sender === 'admin' ? 'justify-start' : 'justify-end'}`}
                         >
-                          {msg.text}
-                          <div className={`text-xs mt-1 ${
-                            msg.sender === 'admin' ? 'text-gray-500' : 'text-gray-200'
-                          }`}>
-                            {msg.timestamp}
+                          <div
+                            className={`max-w-[80%] p-3 rounded-lg text-sm ${
+                              msg.sender === 'admin'
+                                ? 'bg-gray-100 text-gray-800'
+                                : 'bg-automotive-blue text-white'
+                            }`}
+                          >
+                            {msg.text}
+                            <div className={`text-xs mt-1 ${
+                              msg.sender === 'admin' ? 'text-gray-500' : 'text-gray-200'
+                            }`}>
+                              {msg.timestamp}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      ))
+                    )}
                   </div>
                   
                   {/* Input Area */}
@@ -176,6 +205,7 @@ const FloatingChatButton = () => {
                       <Button
                         onClick={handleSendMessage}
                         size="sm"
+                        disabled={!message.trim()}
                         className="bg-automotive-blue hover:bg-automotive-blue/80"
                       >
                         <Send className="h-4 w-4" />
