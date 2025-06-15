@@ -4,11 +4,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Header from '../../components/Header';
 import AdminHeader from '../../components/AdminHeader';
 import ChatCenter from '../../components/ChatCenter';
+import { useChat } from '@/contexts/ChatContext';
 
 const AdminChatCenter = () => {
+  const { state } = useChat();
+
+  const activeChats = state.rooms.filter(room => room.status === 'active').length;
+  const waitingChats = state.rooms.filter(room => room.status === 'waiting').length;
+  const resolvedToday = state.rooms.filter(room => room.status === 'resolved').length;
+  const totalUnread = state.rooms.reduce((total, room) => total + room.unreadCount, 0);
+
   const headerStats = [
-    { label: 'Chats Activos', value: 5 },
-    { label: 'Atendidos Hoy', value: 12 },
+    { label: 'Chats Activos', value: activeChats },
+    { label: 'Atendidos Hoy', value: resolvedToday },
     { label: 'Satisfacción', value: '98%' }
   ];
 
@@ -31,8 +39,10 @@ const AdminChatCenter = () => {
               <Clock className="h-4 w-4 text-yellow-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-yellow-600">3</div>
-              <p className="text-xs text-muted-foreground">Esperando respuesta</p>
+              <div className="text-2xl font-bold text-yellow-600">{waitingChats}</div>
+              <p className="text-xs text-muted-foreground">
+                {totalUnread > 0 ? `${totalUnread} mensajes sin leer` : 'Todos los mensajes leídos'}
+              </p>
             </CardContent>
           </Card>
 
@@ -42,7 +52,7 @@ const AdminChatCenter = () => {
               <MessageCircle className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">2</div>
+              <div className="text-2xl font-bold text-green-600">{activeChats}</div>
               <p className="text-xs text-muted-foreground">En conversación</p>
             </CardContent>
           </Card>
@@ -53,7 +63,7 @@ const AdminChatCenter = () => {
               <Users className="h-4 w-4 text-automotive-blue" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-automotive-blue">12</div>
+              <div className="text-2xl font-bold text-automotive-blue">{resolvedToday}</div>
               <p className="text-xs text-muted-foreground">Satisfacción: 98%</p>
             </CardContent>
           </Card>
