@@ -11,56 +11,45 @@ const FloatingChatButton = () => {
   const [message, setMessage] = useState('');
   const [clientName, setClientName] = useState('');
   const [step, setStep] = useState<'name' | 'chat'>('name');
-  const [currentRoomId, setCurrentRoomId] = useState<number | null>(null);
+  const [localRoomId, setLocalRoomId] = useState<number | null>(null);
+
+  // Efecto: Cuando cambia rooms o clientName, busca la sala correcta y sincroniza roomId
+  useEffect(() => {
+    if (!clientName) return;
+    const foundRoom = state.rooms.find(room => room.clientName === clientName);
+    if (foundRoom) {
+      setLocalRoomId(foundRoom.id);
+    }
+  }, [state.rooms, clientName]);
+
+  // Cuando localRoomId cambia y está abierto el chat, seleccionar el room globalmente (por admin)
+  useEffect(() => {
+    if (localRoomId && state.selectedRoom !== localRoomId) {
+      dispatch({ type: 'SELECT_ROOM', payload: localRoomId });
+    }
+  }, [localRoomId, state.selectedRoom, dispatch]);
 
   const handleStartChat = () => {
     if (!clientName.trim()) return;
-    
-    // Crear la sala inmediatamente con un mensaje de bienvenida del cliente
-    dispatch({
-      type: 'CREATE_ROOM',
-      payload: {
-        clientName: clientName,
-        initialMessage: `Hola, soy ${clientName}. ¿Podrían ayudarme?`
-      }
-    });
-    
-    // Encontrar la sala recién creada
-    setTimeout(() => {
-      const newRoom = state.rooms.find(room => room.clientName === clientName);
-      if (newRoom) {
-        setCurrentRoomId(newRoom.id);
-      }
-    }, 100);
-    
+    // Evitar recrear la sala si ya existe para el mismo cliente
+    const existingRoom = state.rooms.find(room => room.clientName === clientName);
+    if (!existingRoom) {
+      dispatch({
+        type: 'CREATE_ROOM',
+        payload: {
+          clientName: clientName,
+          initialMessage: `Hola, soy ${clientName}. ¿Podrían ayudarme?`
+        }
+      });
+    }
     setStep('chat');
   };
 
   const handleSendMessage = () => {
     if (!message.trim() || !clientName) return;
-    
-    // Buscar la sala actual del cliente
-    let targetRoom = state.rooms.find(room => room.clientName === clientName);
-    
-    if (!targetRoom) {
-      // Si no existe la sala, crearla con el primer mensaje
-      dispatch({
-        type: 'CREATE_ROOM',
-        payload: {
-          clientName: clientName,
-          initialMessage: message
-        }
-      });
-      
-      // Establecer el ID de la sala después de crearla
-      setTimeout(() => {
-        const newRoom = state.rooms.find(room => room.clientName === clientName);
-        if (newRoom) {
-          setCurrentRoomId(newRoom.id);
-        }
-      }, 100);
-    } else {
-      // Si la sala existe, agregar el mensaje
+    // Busca la sala por clientName
+    const targetRoom = state.rooms.find(room => room.clientName === clientName);
+    if (targetRoom) {
       dispatch({
         type: 'ADD_MESSAGE',
         payload: {
@@ -73,31 +62,40 @@ const FloatingChatButton = () => {
           }
         }
       });
-      setCurrentRoomId(targetRoom.id);
+      setLocalRoomId(targetRoom.id);
+    } else {
+      // Si no existe (raro), crearla y step chat
+      dispatch({
+        type: 'CREATE_ROOM',
+        payload: {
+          clientName: clientName,
+          initialMessage: message
+        }
+      });
+      setStep('chat');
     }
-    
     setMessage('');
   };
 
   const handleClose = () => {
     dispatch({ type: 'TOGGLE_FLOATING_CHAT', payload: false });
-    // No resetear el step y clientName para mantener la conversación
+    // No resetear step ni clientName para conversaciones persistentes.
   };
 
-  // Obtener los mensajes de la sala actual
-  const currentMessages = currentRoomId 
-    ? state.rooms.find(room => room.id === currentRoomId)?.messages || []
+  // Mensajes de la sala actual
+  const currentMessages = localRoomId
+    ? state.rooms.find(room => room.id === localRoomId)?.messages || []
     : state.rooms.find(room => room.clientName === clientName)?.messages || [];
 
   // Contar mensajes no leídos total
   const totalUnreadCount = state.rooms.reduce((total, room) => total + room.unreadCount, 0);
 
-  // Resetear cuando se cierra completamente el chat
+  // Reset al cerrar el chat totalmente
   const handleReset = () => {
     setStep('name');
     setClientName('');
     setMessage('');
-    setCurrentRoomId(null);
+    setLocalRoomId(null);
     dispatch({ type: 'TOGGLE_FLOATING_CHAT', payload: false });
   };
 
@@ -135,7 +133,6 @@ const FloatingChatButton = () => {
                 </div>
               </div>
             </CardHeader>
-            
             <CardContent className="flex-1 flex flex-col p-0">
               {step === 'name' ? (
                 <div className="flex-1 flex flex-col justify-center p-4">
@@ -147,7 +144,7 @@ const FloatingChatButton = () => {
                     placeholder="Tu nombre..."
                     value={clientName}
                     onChange={(e) => setClientName(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleStartChat()}
+                    onKeyDown={(e) => e.key === 'Enter' && handleStartChat()}
                     className="mb-4"
                   />
                   <Button
@@ -191,7 +188,6 @@ const FloatingChatButton = () => {
                       ))
                     )}
                   </div>
-                  
                   {/* Input Area */}
                   <div className="border-t p-4">
                     <div className="flex space-x-2">
@@ -199,7 +195,7 @@ const FloatingChatButton = () => {
                         placeholder="Escribe tu mensaje..."
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                         className="flex-1"
                       />
                       <Button
@@ -218,7 +214,6 @@ const FloatingChatButton = () => {
           </Card>
         </div>
       )}
-
       {/* Floating Button */}
       <Button
         onClick={() => dispatch({ type: 'TOGGLE_FLOATING_CHAT' })}
