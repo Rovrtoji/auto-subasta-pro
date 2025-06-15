@@ -7,17 +7,23 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import Header from '../../components/Header';
 import VehicleForm from '../../components/VehicleForm';
+import VehicleEditForm from '../../components/VehicleEditForm';
 import { useVehicles } from '@/hooks/useVehicles';
+import { useDeleteVehicle } from '@/hooks/useDeleteVehicle';
 
 const AdminInventory = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [selectedVehicle, setSelectedVehicle] = useState<any>(null);
+  const [editingVehicle, setEditingVehicle] = useState<any>(null);
+  const [vehicleToDelete, setVehicleToDelete] = useState<any>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   
   const { data: vehicles, isLoading, refetch } = useVehicles();
+  const deleteVehicle = useDeleteVehicle();
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('es-MX', {
@@ -53,6 +59,17 @@ const AdminInventory = () => {
 
   const handleCreateSuccess = () => {
     refetch();
+  };
+
+  const handleEditSuccess = () => {
+    refetch();
+  };
+
+  const handleDeleteVehicle = async () => {
+    if (vehicleToDelete) {
+      await deleteVehicle.mutateAsync(vehicleToDelete.id);
+      setVehicleToDelete(null);
+    }
   };
 
   if (isLoading) {
@@ -224,13 +241,25 @@ const AdminInventory = () => {
                           variant="outline"
                           size="sm"
                           onClick={() => setSelectedVehicle(vehicle)}
+                          title="Ver detalles"
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => setEditingVehicle(vehicle)}
+                          title="Editar vehículo"
+                        >
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => setVehicleToDelete(vehicle)}
+                          title="Eliminar vehículo"
+                          className="hover:bg-red-50 hover:text-red-600"
+                        >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -281,6 +310,7 @@ const AdminInventory = () => {
                 <div className="space-y-2">
                   <p><span className="font-medium">Color:</span> {selectedVehicle.color}</p>
                   <p><span className="font-medium">Estado:</span> {selectedVehicle.estado_general}</p>
+                  <p><span className="font-medium">Tipo:</span> {selectedVehicle.en_subasta ? 'Subasta' : 'Venta Directa'}</p>
                 </div>
               </div>
               {selectedVehicle.descripcion && (
@@ -303,6 +333,43 @@ const AdminInventory = () => {
           />
         </DialogContent>
       </Dialog>
+
+      {/* Edit Vehicle Modal */}
+      <Dialog open={!!editingVehicle} onOpenChange={() => setEditingVehicle(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          {editingVehicle && (
+            <VehicleEditForm 
+              vehicle={editingVehicle}
+              onClose={() => setEditingVehicle(null)} 
+              onSuccess={handleEditSuccess}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!vehicleToDelete} onOpenChange={() => setVehicleToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. Esto eliminará permanentemente el vehículo
+              {vehicleToDelete && ` ${vehicleToDelete.marca} ${vehicleToDelete.modelo} ${vehicleToDelete.año}`} 
+              y todos sus datos asociados.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteVehicle}
+              className="bg-red-600 hover:bg-red-700"
+              disabled={deleteVehicle.isPending}
+            >
+              {deleteVehicle.isPending ? 'Eliminando...' : 'Eliminar'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
