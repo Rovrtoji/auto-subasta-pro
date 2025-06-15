@@ -55,18 +55,6 @@ export const useImageUpload = () => {
 
       console.log('Public URL generated:', data.publicUrl);
 
-      // Verificar que la imagen se puede acceder
-      try {
-        const response = await fetch(data.publicUrl, { method: 'HEAD' });
-        if (!response.ok) {
-          console.error('Image not accessible at URL:', data.publicUrl);
-          throw new Error('Imagen subida pero no accesible');
-        }
-      } catch (fetchError) {
-        console.error('Error verifying image URL:', fetchError);
-        // Continuar de todas formas, puede ser un problema temporal
-      }
-
       setUploadProgress(100);
       toast.success('Imagen subida exitosamente');
       return data.publicUrl;

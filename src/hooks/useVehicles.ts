@@ -1,42 +1,26 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import type { Tables, TablesInsert } from '@/integrations/supabase/types';
-
-type Vehicle = Tables<'vehicles'>;
-type VehicleInsert = TablesInsert<'vehicles'>;
-type VehicleStatusHistory = Tables<'vehicle_status_history'>;
-type VehicleImages = Tables<'vehicle_images'>;
+import { toast } from 'sonner';
 
 export const useVehicles = () => {
   return useQuery({
     queryKey: ['vehicles'],
     queryFn: async () => {
+      console.log('Fetching vehicles...');
       const { data, error } = await supabase
         .from('vehicles')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      return data as Vehicle[];
-    },
-  });
-};
+      if (error) {
+        console.error('Error fetching vehicles:', error);
+        throw new Error('Error al cargar los vehículos');
+      }
 
-export const useVehicle = (id: string) => {
-  return useQuery({
-    queryKey: ['vehicle', id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('vehicles')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      if (error) throw error;
-      return data as Vehicle;
+      console.log('Vehicles fetched:', data?.length);
+      return data || [];
     },
-    enabled: !!id,
   });
 };
 
@@ -44,35 +28,38 @@ export const useCreateVehicle = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (vehicle: VehicleInsert & { imageUrls?: string[] }) => {
-      const { imageUrls, ...vehicleData } = vehicle;
+    mutationFn: async (vehicleData: any) => {
+      console.log('Creating vehicle with data:', vehicleData);
       
-      // Crear vehículo
-      const { data: vehicleResult, error } = await supabase
+      // Preparar los datos del vehículo
+      const { imageUrls, ...vehicleFields } = vehicleData;
+      
+      // Insertar el vehículo
+      const { data: vehicle, error: vehicleError } = await supabase
         .from('vehicles')
-        .insert(vehicleData)
+        .insert({
+          ...vehicleFields,
+          imagen: imageUrls?.[0] || null,
+          imagenes: imageUrls || []
+        })
         .select()
         .single();
 
-      if (error) throw error;
-
-      // Si hay imágenes, gestionarlas
-      if (imageUrls && imageUrls.length > 0) {
-        const { error: imageError } = await supabase.rpc('manage_vehicle_images', {
-          p_vehicle_id: vehicleResult.id,
-          p_images: imageUrls,
-          p_primary_image: imageUrls[0]
-        });
-
-        if (imageError) {
-          console.error('Error managing images:', imageError);
-        }
+      if (vehicleError) {
+        console.error('Error creating vehicle:', vehicleError);
+        throw new Error('Error al crear el vehículo');
       }
 
-      return vehicleResult;
+      console.log('Vehicle created successfully:', vehicle);
+      return vehicle;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vehicles'] });
+      toast.success('Vehículo creado exitosamente');
+    },
+    onError: (error: any) => {
+      console.error('Create vehicle error:', error);
+      toast.error(error.message || 'Error al crear el vehículo');
     },
   });
 };
@@ -81,101 +68,39 @@ export const useUpdateVehicle = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: Partial<Vehicle> & { imageUrls?: string[] } }) => {
-      const { imageUrls, ...vehicleUpdates } = updates;
+    mutationFn: async ({ id, updates }: { id: string; updates: any }) => {
+      console.log('Updating vehicle:', id, updates);
       
-      // Actualizar vehículo
+      // Separar imageUrls del resto de updates
+      const { imageUrls, ...vehicleFields } = updates;
+      
+      // Actualizar el vehículo directamente
       const { data, error } = await supabase
         .from('vehicles')
-        .update(vehicleUpdates)
+        .update({
+          ...vehicleFields,
+          imagen: imageUrls?.[0] || vehicleFields.imagen,
+          imagenes: imageUrls || vehicleFields.imagenes || []
+        })
         .eq('id', id)
         .select()
         .single();
 
-      if (error) throw error;
-
-      // Si hay imágenes, gestionarlas
-      if (imageUrls && imageUrls.length > 0) {
-        const { error: imageError } = await supabase.rpc('manage_vehicle_images', {
-          p_vehicle_id: id,
-          p_images: imageUrls,
-          p_primary_image: imageUrls[0]
-        });
-
-        if (imageError) {
-          console.error('Error managing images:', imageError);
-        }
+      if (error) {
+        console.error('Error updating vehicle:', error);
+        throw new Error('Error al actualizar el vehículo');
       }
 
+      console.log('Vehicle updated successfully:', data);
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vehicles'] });
+      toast.success('Vehículo actualizado exitosamente');
     },
-  });
-};
-
-export const useUpdateVehicleStatus = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ vehicleId, newStatus, reason }: { vehicleId: string; newStatus: string; reason?: string }) => {
-      const { error } = await supabase.rpc('update_vehicle_status', {
-        p_vehicle_id: vehicleId,
-        p_nuevo_estado: newStatus,
-        p_motivo: reason
-      });
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['vehicles'] });
-    },
-  });
-};
-
-export const useVehicleStatusHistory = (vehicleId: string) => {
-  return useQuery({
-    queryKey: ['vehicle-status-history', vehicleId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('vehicle_status_history')
-        .select('*')
-        .eq('vehicle_id', vehicleId)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data as VehicleStatusHistory[];
-    },
-    enabled: !!vehicleId,
-  });
-};
-
-export const useVehicleImages = (vehicleId: string) => {
-  return useQuery({
-    queryKey: ['vehicle-images', vehicleId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('vehicle_images')
-        .select('*')
-        .eq('vehicle_id', vehicleId)
-        .order('orden', { ascending: true });
-
-      if (error) throw error;
-      return data as VehicleImages[];
-    },
-    enabled: !!vehicleId,
-  });
-};
-
-export const useInventoryStats = () => {
-  return useQuery({
-    queryKey: ['inventory-stats'],
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_inventory_stats');
-
-      if (error) throw error;
-      return data[0];
+    onError: (error: any) => {
+      console.error('Update vehicle error:', error);
+      toast.error(error.message || 'Error al actualizar el vehículo');
     },
   });
 };
