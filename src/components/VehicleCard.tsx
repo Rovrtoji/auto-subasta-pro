@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useState } from 'react';
 import OfferModal from './OfferModal';
+import BidModal from './BidModal';
 
 interface Vehicle {
   id: string;
@@ -28,14 +29,16 @@ interface Vehicle {
 interface VehicleCardProps {
   vehicle: Vehicle;
   showAuctionInfo?: boolean;
+  auction?: any;
   onReserve?: (vehicleId: string) => void;
   onSchedule?: (vehicleId: string) => void;
   onBid?: (vehicleId: string) => void;
   onPayment?: (vehicleId: string) => void;
 }
 
-const VehicleCard = ({ vehicle, showAuctionInfo = false, onReserve, onSchedule, onBid, onPayment }: VehicleCardProps) => {
+const VehicleCard = ({ vehicle, showAuctionInfo = false, auction, onReserve, onSchedule, onBid, onPayment }: VehicleCardProps) => {
   const [showOfferModal, setShowOfferModal] = useState(false);
+  const [showBidModal, setShowBidModal] = useState(false);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('es-MX', {
@@ -54,6 +57,10 @@ const VehicleCard = ({ vehicle, showAuctionInfo = false, onReserve, onSchedule, 
     } else if (onReserve) {
       onReserve(vehicle.id);
     }
+  };
+
+  const handleBidClick = () => {
+    setShowBidModal(true);
   };
 
   // Handle both database field names and mock data field names
@@ -106,7 +113,7 @@ const VehicleCard = ({ vehicle, showAuctionInfo = false, onReserve, onSchedule, 
             </h3>
             <div className="flex items-center justify-between">
               <p className="text-2xl font-bold text-automotive-gold">
-                {formatPrice(vehicle.precio)}
+                {formatPrice(auction?.precio_actual || vehicle.precio)}
               </p>
               {showAuctionInfo && isInAuction && (
                 <Badge variant="destructive" className="animate-pulse">
@@ -165,7 +172,7 @@ const VehicleCard = ({ vehicle, showAuctionInfo = false, onReserve, onSchedule, 
           {isInAuction ? (
             <div className="w-full space-y-2">
               <Button 
-                onClick={() => onBid?.(vehicle.id)}
+                onClick={handleBidClick}
                 className="w-full btn-premium"
                 disabled={isReserved}
               >
@@ -214,6 +221,13 @@ const VehicleCard = ({ vehicle, showAuctionInfo = false, onReserve, onSchedule, 
         vehicle={vehicle}
         isOpen={showOfferModal}
         onClose={() => setShowOfferModal(false)}
+      />
+
+      <BidModal 
+        vehicle={vehicle}
+        auction={auction}
+        isOpen={showBidModal}
+        onClose={() => setShowBidModal(false)}
       />
     </>
   );

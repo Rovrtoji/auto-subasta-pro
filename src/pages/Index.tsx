@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from 'react';
 import { Filter, Grid, List, Search, Gavel, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -243,6 +242,7 @@ const Index = () => {
                             precio: Number(vehicle.precio),
                             caracteristicas: vehicle.caracteristicas || []
                           }}
+                          auction={auction}
                           showAuctionInfo={true}
                           onBid={handleBidOnAuction}
                         />
