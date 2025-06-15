@@ -144,6 +144,56 @@ export type Database = {
           },
         ]
       }
+      offers: {
+        Row: {
+          created_at: string
+          id: string
+          message: string | null
+          offer_amount: number
+          status: string
+          updated_at: string
+          user_email: string
+          user_id: string | null
+          user_name: string
+          user_phone: string | null
+          vehicle_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          offer_amount: number
+          status?: string
+          updated_at?: string
+          user_email: string
+          user_id?: string | null
+          user_name: string
+          user_phone?: string | null
+          vehicle_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          offer_amount?: number
+          status?: string
+          updated_at?: string
+          user_email?: string
+          user_id?: string | null
+          user_name?: string
+          user_phone?: string | null
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "offers_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
