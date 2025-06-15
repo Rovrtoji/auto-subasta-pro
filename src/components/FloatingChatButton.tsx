@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { MessageCircle, X, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,27 +13,15 @@ const FloatingChatButton = () => {
   const [step, setStep] = useState<'name' | 'chat'>('name');
   const [localRoomId, setLocalRoomId] = useState<number | null>(null);
 
-  // Efecto: Cuando cambia rooms o clientName, busca la sala correcta y sincroniza roomId
-  useEffect(() => {
-    if (!clientName) return;
-    const foundRoom = state.rooms.find(room => room.clientName === clientName);
-    if (foundRoom) {
-      setLocalRoomId(foundRoom.id);
-    }
-  }, [state.rooms, clientName]);
+  // Ref para evitar efectos dobles en useEffect
+  const justCreatedRoom = useRef(false);
 
-  // Cuando localRoomId cambia y está abierto el chat, seleccionar el room globalmente (por admin)
-  useEffect(() => {
-    if (localRoomId && state.selectedRoom !== localRoomId) {
-      dispatch({ type: 'SELECT_ROOM', payload: localRoomId });
-    }
-  }, [localRoomId, state.selectedRoom, dispatch]);
-
+  // Cuando el cliente inicia chat: crear sala si no existe, y guardar el id cuando se agregue al state
   const handleStartChat = () => {
     if (!clientName.trim()) return;
-    // Evitar recrear la sala si ya existe para el mismo cliente
     const existingRoom = state.rooms.find(room => room.clientName === clientName);
     if (!existingRoom) {
+      justCreatedRoom.current = true;
       dispatch({
         type: 'CREATE_ROOM',
         payload: {
@@ -41,19 +29,43 @@ const FloatingChatButton = () => {
           initialMessage: `Hola, soy ${clientName}. ¿Podrían ayudarme?`
         }
       });
+    } else {
+      setLocalRoomId(existingRoom.id);
+      dispatch({ type: 'SELECT_ROOM', payload: existingRoom.id });
     }
     setStep('chat');
   };
 
+  // Efecto reactivo que detecta cuando se crea una nueva sala para ese cliente y selecciona la room correcta
+  useEffect(() => {
+    if (!clientName) return;
+    const foundRoom = state.rooms.find(room => room.clientName === clientName);
+    if (foundRoom && (localRoomId !== foundRoom.id)) {
+      setLocalRoomId(foundRoom.id);
+      dispatch({ type: 'SELECT_ROOM', payload: foundRoom.id });
+      if (justCreatedRoom.current) {
+        justCreatedRoom.current = false;
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.rooms, clientName]);
+
+  // Cuando localRoomId cambia y está abierto el chat, selecciona room globalmente
+  useEffect(() => {
+    if (localRoomId && state.selectedRoom !== localRoomId) {
+      dispatch({ type: 'SELECT_ROOM', payload: localRoomId });
+    }
+  }, [localRoomId, state.selectedRoom, dispatch]);
+
+  // Enviar mensaje (cliente)
   const handleSendMessage = () => {
     if (!message.trim() || !clientName) return;
-    // Busca la sala por clientName
-    const targetRoom = state.rooms.find(room => room.clientName === clientName);
-    if (targetRoom) {
+    const currRoom = state.rooms.find(room => room.clientName === clientName);
+    if (currRoom) {
       dispatch({
         type: 'ADD_MESSAGE',
         payload: {
-          roomId: targetRoom.id,
+          roomId: currRoom.id,
           message: {
             text: message,
             sender: 'client',
@@ -62,35 +74,17 @@ const FloatingChatButton = () => {
           }
         }
       });
-      setLocalRoomId(targetRoom.id);
-    } else {
-      // Si no existe (raro), crearla y step chat
-      dispatch({
-        type: 'CREATE_ROOM',
-        payload: {
-          clientName: clientName,
-          initialMessage: message
-        }
-      });
-      setStep('chat');
+      setLocalRoomId(currRoom.id);
     }
     setMessage('');
   };
 
+  // Cierre visual del chat flotante pero conserva la info para continuar la sesión
   const handleClose = () => {
     dispatch({ type: 'TOGGLE_FLOATING_CHAT', payload: false });
-    // No resetear step ni clientName para conversaciones persistentes.
   };
 
-  // Mensajes de la sala actual
-  const currentMessages = localRoomId
-    ? state.rooms.find(room => room.id === localRoomId)?.messages || []
-    : state.rooms.find(room => room.clientName === clientName)?.messages || [];
-
-  // Contar mensajes no leídos total
-  const totalUnreadCount = state.rooms.reduce((total, room) => total + room.unreadCount, 0);
-
-  // Reset al cerrar el chat totalmente
+  // Reset completo para nueva conversación
   const handleReset = () => {
     setStep('name');
     setClientName('');
@@ -99,9 +93,17 @@ const FloatingChatButton = () => {
     dispatch({ type: 'TOGGLE_FLOATING_CHAT', payload: false });
   };
 
+  // Mensajes de la sala activa
+  const currentMessages = localRoomId
+    ? state.rooms.find(room => room.id === localRoomId)?.messages || []
+    : [];
+
+  // Contador de mensajes no leídos global
+  const totalUnreadCount = state.rooms.reduce((total, room) => total + room.unreadCount, 0);
+
   return (
     <>
-      {/* Chat Window */}
+      {/* Ventana de chat (flotante) */}
       {state.isFloatingChatOpen && (
         <div className="fixed bottom-20 right-4 z-50 w-80 h-96 shadow-2xl animate-fade-in">
           <Card className="h-full flex flex-col">
@@ -157,7 +159,7 @@ const FloatingChatButton = () => {
                 </div>
               ) : (
                 <>
-                  {/* Messages Area */}
+                  {/* Área de mensajes */}
                   <div className="flex-1 overflow-y-auto p-4 space-y-3">
                     {currentMessages.length === 0 ? (
                       <div className="text-center text-gray-500 mt-8">
@@ -188,7 +190,7 @@ const FloatingChatButton = () => {
                       ))
                     )}
                   </div>
-                  {/* Input Area */}
+                  {/* Input del mensaje */}
                   <div className="border-t p-4">
                     <div className="flex space-x-2">
                       <Input
@@ -214,7 +216,7 @@ const FloatingChatButton = () => {
           </Card>
         </div>
       )}
-      {/* Floating Button */}
+      {/* Botón flotante */}
       <Button
         onClick={() => dispatch({ type: 'TOGGLE_FLOATING_CHAT' })}
         className="fixed bottom-4 right-4 z-50 h-14 w-14 rounded-full bg-automotive-blue hover:bg-automotive-blue/80 shadow-lg hover:shadow-xl transition-all duration-300"
@@ -238,3 +240,4 @@ const FloatingChatButton = () => {
 };
 
 export default FloatingChatButton;
+
