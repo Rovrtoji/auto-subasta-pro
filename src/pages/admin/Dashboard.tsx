@@ -109,26 +109,26 @@ const AdminDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Button onClick={() => window.location.href = '/admin/inventario'} className="btn-premium h-auto p-4 flex-col space-y-2">
+              <Button onClick={() => window.location.href = '/admin/inventory'} className="btn-premium h-auto p-4 flex-col space-y-2">
                 <Car className="h-8 w-8" />
                 <span>Gestionar Inventario</span>
               </Button>
               
               <Button 
-                onClick={() => window.location.href = '/admin/subastas'}
+                onClick={() => window.location.href = '/admin/auction-inventory'}
                 variant="outline" 
                 className="h-auto p-4 flex-col space-y-2 hover:bg-automotive-blue hover:text-white"
               >
                 <Clock className="h-8 w-8" />
-                <span>Subastas Activas</span>
+                <span>Inventario Subastas</span>
               </Button>
               
-              <Button onClick={() => window.location.href = '/admin/chat'} variant="outline" className="h-auto p-4 flex-col space-y-2 hover:bg-automotive-gold hover:text-white">
+              <Button onClick={() => window.location.href = '/admin/chat-center'} variant="outline" className="h-auto p-4 flex-col space-y-2 hover:bg-automotive-gold hover:text-white">
                 <Users className="h-8 w-8" />
                 <span>Chat Center</span>
               </Button>
               
-              <Button onClick={() => window.location.href = '/admin/calculadora'} variant="outline" className="h-auto p-4 flex-col space-y-2 hover:bg-green-600 hover:text-white">
+              <Button onClick={() => window.location.href = '/admin/calculator'} variant="outline" className="h-auto p-4 flex-col space-y-2 hover:bg-green-600 hover:text-white">
                 <DollarSign className="h-8 w-8" />
                 <span>Calculadora</span>
               </Button>
