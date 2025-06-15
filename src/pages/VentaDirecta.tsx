@@ -116,6 +116,8 @@ const VentaDirecta = () => {
             onClearFilters={clearFilters}
             isOpen={isSidebarOpen}
             onClose={() => setIsSidebarOpen(false)}
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
           />
 
           <main className="flex-1">

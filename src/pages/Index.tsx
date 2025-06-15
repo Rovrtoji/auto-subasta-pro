@@ -248,7 +248,7 @@ const Index = () => {
                         />
                         {auction && (
                           <AuctionTimer
-                            endTime={auction.fecha_fin}
+                            endTime={new Date(auction.fecha_fin)}
                           />
                         )}
                       </div>
