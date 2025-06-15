@@ -53,13 +53,23 @@ export const useCreateBid = () => {
 
   return useMutation({
     mutationFn: async (bid: BidInsert) => {
+      console.log('Creating bid with data:', bid);
+      
+      // Validar que tenemos los datos necesarios
+      if (!bid.user_id || !bid.auction_id || !bid.cantidad) {
+        throw new Error('Datos de puja incompletos');
+      }
+
       const { data, error } = await supabase
         .from('bids')
         .insert(bid)
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating bid:', error);
+        throw error;
+      }
 
       // Actualizar el precio actual de la subasta
       const { error: updateError } = await supabase
@@ -67,13 +77,20 @@ export const useCreateBid = () => {
         .update({ precio_actual: bid.cantidad })
         .eq('id', bid.auction_id);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Error updating auction price:', updateError);
+        throw updateError;
+      }
 
       return data;
     },
     onSuccess: (data) => {
+      console.log('Bid created successfully:', data);
       queryClient.invalidateQueries({ queryKey: ['auctions'] });
       queryClient.invalidateQueries({ queryKey: ['auction', data.auction_id] });
+    },
+    onError: (error) => {
+      console.error('Bid creation failed:', error);
     },
   });
 };

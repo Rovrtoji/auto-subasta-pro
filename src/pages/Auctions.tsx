@@ -1,23 +1,19 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAuctions } from '@/hooks/useAuctions';
-import { useCreateBid } from '@/hooks/useAuctions';
+import { useAuth } from '@/hooks/useAuth';
 import Header from '@/components/Header';
-import VehicleCard from '@/components/VehicleCard';
 import AuctionTimer from '@/components/AuctionTimer';
+import BidModal from '@/components/BidModal';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Clock, Users, TrendingUp, DollarSign } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { toast } from 'sonner';
 
 const Auctions = () => {
   const { data: auctions = [], isLoading } = useAuctions();
-  const createBid = useCreateBid();
+  const { user } = useAuth();
   const [selectedAuction, setSelectedAuction] = useState<any>(null);
-  const [bidAmount, setBidAmount] = useState('');
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('es-MX', {
@@ -25,35 +21,6 @@ const Auctions = () => {
       currency: 'MXN',
       maximumFractionDigits: 0
     }).format(price);
-  };
-
-  const handlePlaceBid = async () => {
-    if (!selectedAuction || !bidAmount) {
-      toast.error('Por favor ingresa un monto válido');
-      return;
-    }
-
-    const amount = parseFloat(bidAmount);
-    if (amount <= selectedAuction.precio_actual) {
-      toast.error(`La puja debe ser mayor a ${formatPrice(selectedAuction.precio_actual)}`);
-      return;
-    }
-
-    try {
-      await createBid.mutateAsync({
-        auction_id: selectedAuction.id,
-        cantidad: amount,
-        user_id: 'temp-user-id', // TODO: Replace with actual user ID when auth is implemented
-        user_name: 'Usuario Anónimo', // TODO: Replace with actual user name
-      });
-      
-      toast.success('¡Puja realizada exitosamente!');
-      setSelectedAuction(null);
-      setBidAmount('');
-    } catch (error) {
-      console.error('Error placing bid:', error);
-      toast.error('Error al realizar la puja');
-    }
   };
 
   if (isLoading) {
@@ -67,12 +34,10 @@ const Auctions = () => {
     );
   }
 
-  // Debug de subastas
   console.log('Auctions loaded:', auctions.length);
   auctions.forEach(auction => {
     console.log('Auction:', auction.id, 'Vehicle:', auction.vehicles?.marca, auction.vehicles?.modelo);
-    console.log('Image URL:', auction.vehicles?.imagen);
-    console.log('Images array:', auction.vehicles?.imagenes);
+    console.log('Vehicle ID:', auction.vehicle_id);
   });
 
   return (
@@ -141,7 +106,6 @@ const Auctions = () => {
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
             {auctions.map((auction) => {
-              // Mejorar manejo de imágenes
               const imageUrl = auction.vehicles?.imagen || 
                              auction.vehicles?.imagenes?.[0] || 
                              '/placeholder.svg';
@@ -193,9 +157,10 @@ const Auctions = () => {
                       <Button 
                         onClick={() => setSelectedAuction(auction)}
                         className="flex-1 bg-automotive-blue hover:bg-automotive-blue/90"
+                        disabled={!user}
                       >
                         <DollarSign className="h-4 w-4 mr-2" />
-                        Pujar
+                        {user ? 'Pujar' : 'Inicia Sesión'}
                       </Button>
                       <Button variant="outline" className="flex-1">
                         Ver Detalles
@@ -209,65 +174,22 @@ const Auctions = () => {
         )}
       </div>
 
-      {/* Bid Modal */}
-      <Dialog open={!!selectedAuction} onOpenChange={() => setSelectedAuction(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Realizar Puja</DialogTitle>
-          </DialogHeader>
-          {selectedAuction && (
-            <div className="space-y-4">
-              <div className="text-center">
-                <h3 className="text-lg font-semibold">
-                  {selectedAuction.vehicles?.marca} {selectedAuction.vehicles?.modelo}
-                </h3>
-                <p className="text-muted-foreground">{selectedAuction.vehicles?.año}</p>
-              </div>
-              
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span>Puja actual:</span>
-                  <span className="font-bold text-green-600">
-                    {formatPrice(selectedAuction.precio_actual)}
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>Mínimo siguiente:</span>
-                  <span>{formatPrice(selectedAuction.precio_actual + 1000)}</span>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Tu puja (MXN)</label>
-                <Input
-                  type="number"
-                  placeholder={`Mínimo ${selectedAuction.precio_actual + 1000}`}
-                  value={bidAmount}
-                  onChange={(e) => setBidAmount(e.target.value)}
-                  min={selectedAuction.precio_actual + 1000}
-                />
-              </div>
-
-              <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  className="flex-1"
-                  onClick={() => setSelectedAuction(null)}
-                >
-                  Cancelar
-                </Button>
-                <Button 
-                  className="flex-1 bg-automotive-blue hover:bg-automotive-blue/90"
-                  onClick={handlePlaceBid}
-                  disabled={createBid.isPending}
-                >
-                  {createBid.isPending ? 'Pujando...' : 'Confirmar Puja'}
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Bid Modal usando el componente BidModal */}
+      {selectedAuction && (
+        <BidModal 
+          vehicle={{
+            id: selectedAuction.vehicle_id,
+            marca: selectedAuction.vehicles?.marca || '',
+            modelo: selectedAuction.vehicles?.modelo || '',
+            año: selectedAuction.vehicles?.año || new Date().getFullYear(),
+            precio: selectedAuction.precio_inicial,
+            imagen: selectedAuction.vehicles?.imagen
+          }}
+          auction={selectedAuction}
+          isOpen={!!selectedAuction}
+          onClose={() => setSelectedAuction(null)}
+        />
+      )}
     </div>
   );
 };
