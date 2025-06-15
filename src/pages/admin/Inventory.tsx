@@ -1,8 +1,8 @@
-
 import { useState } from 'react';
 import { useVehicles, useUpdateVehicle } from '@/hooks/useVehicles';
 import { useDeleteVehicle } from '@/hooks/useDeleteVehicle';
 import Header from '@/components/Header';
+import AdminHeader from '@/components/AdminHeader';
 import VehicleForm from '@/components/VehicleForm';
 import VehicleEditForm from '@/components/VehicleEditForm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -79,28 +79,34 @@ const Inventory = () => {
   const availableVehicles = directSaleVehicles.filter(v => !v.apartado);
   const reservedVehicles = directSaleVehicles.filter(v => v.apartado);
 
+  const headerStats = [
+    { label: 'Total Venta Directa', value: directSaleVehicles.length },
+    { label: 'Disponibles', value: availableVehicles.length },
+    { label: 'Apartados', value: reservedVehicles.length }
+  ];
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
       
+      <AdminHeader 
+        title="Inventario - Venta Directa"
+        subtitle="Gestiona vehículos disponibles para venta directa"
+        stats={headerStats}
+      />
+      
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <div className="flex justify-between items-center mb-4">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                Inventario - Venta Directa
-              </h1>
-              <p className="text-gray-600">
-                Gestiona vehículos disponibles para venta directa
-              </p>
+            <div className="flex items-center gap-4">
+              <Button 
+                onClick={() => setShowCreateForm(true)}
+                className="bg-automotive-blue hover:bg-automotive-blue/90"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Agregar Vehículo
+              </Button>
             </div>
-            <Button 
-              onClick={() => setShowCreateForm(true)}
-              className="bg-automotive-blue hover:bg-automotive-blue/90"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Agregar Vehículo
-            </Button>
           </div>
         </div>
 

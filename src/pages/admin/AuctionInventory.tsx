@@ -1,8 +1,8 @@
-
 import { useState } from 'react';
 import { useVehicles } from '@/hooks/useVehicles';
 import { useCreateAuction } from '@/hooks/useCreateAuction';
 import Header from '@/components/Header';
+import AdminHeader from '@/components/AdminHeader';
 import AuctionVehicleForm from '@/components/AuctionVehicleForm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -94,28 +94,34 @@ const AuctionInventory = () => {
     );
   }
 
+  const headerStats = [
+    { label: 'Total Vehículos', value: vehicles.length },
+    { label: 'Disponibles para Subasta', value: availableVehicles.length },
+    { label: 'En Subasta', value: vehicles.filter(v => v.en_subasta).length }
+  ];
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
       
+      <AdminHeader 
+        title="Inventario para Subastas"
+        subtitle="Gestiona vehículos destinados a subastas y crea nuevas subastas"
+        stats={headerStats}
+      />
+      
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <div className="flex justify-between items-center mb-4">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                Inventario para Subastas
-              </h1>
-              <p className="text-gray-600">
-                Gestiona vehículos destinados a subastas y crea nuevas subastas
-              </p>
+            <div className="flex items-center gap-4">
+              <Button 
+                onClick={() => setShowCreateForm(true)}
+                className="bg-automotive-blue hover:bg-automotive-blue/90"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Crear Vehículo y Subasta
+              </Button>
             </div>
-            <Button 
-              onClick={() => setShowCreateForm(true)}
-              className="bg-automotive-blue hover:bg-automotive-blue/90"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Crear Vehículo y Subasta
-            </Button>
           </div>
         </div>
 

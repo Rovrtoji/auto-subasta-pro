@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Calculator, TrendingUp, DollarSign, Car, Info } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
 import Header from '../../components/Header';
+import AdminHeader from '../../components/AdminHeader';
 import { marcas } from '../../data/mockData';
 
 const AdminCalculator = () => {
@@ -91,22 +91,20 @@ const AdminCalculator = () => {
     return 'text-red-600';
   };
 
+  const headerStats = resultado ? [
+    { label: 'Precio Estimado', value: formatPrice(resultado.precioEstimado) },
+    { label: 'Confianza', value: `${resultado.confidence.toFixed(0)}%` }
+  ] : undefined;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <Header />
       
-      {/* Admin Header */}
-      <div className="bg-automotive-gradient text-white py-8">
-        <div className="container">
-          <div className="flex items-center space-x-3">
-            <Calculator className="h-8 w-8" />
-            <div>
-              <h1 className="text-3xl font-bold">Calculadora de Precios</h1>
-              <p className="text-gray-200 mt-2">Estima el valor de reventa de vehículos seminuevos</p>
-            </div>
-          </div>
-        </div>
-      </div>
+      <AdminHeader 
+        title="Calculadora de Precios"
+        subtitle="Estima el valor de reventa de vehículos seminuevos"
+        stats={headerStats}
+      />
 
       <div className="container py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Clock, ArrowLeft, Plus, Calendar, DollarSign, Users, Eye, Edit, Trash2 } from 'lucide-react';
+import { Clock, Plus, Calendar, DollarSign, Users, Eye, Edit, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,6 +14,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import Header from '../../components/Header';
+import AdminHeader from '../../components/AdminHeader';
 import { useAuctions } from '@/hooks/useAuctions';
 import { useVehicles } from '@/hooks/useVehicles';
 import { useCreateAuction } from '@/hooks/useCreateAuction';
@@ -150,45 +151,20 @@ const AdminActiveAuctions = () => {
     );
   }
 
+  const headerStats = [
+    { label: 'Activas', value: auctions?.filter(a => a.activa).length || 0 },
+    { label: 'Total', value: auctions?.length || 0 }
+  ];
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <Header />
       
-      {/* Header */}
-      <div className="bg-automotive-gradient text-white py-8">
-        <div className="container">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Button
-                onClick={() => window.location.href = '/admin'}
-                variant="ghost"
-                className="text-white hover:bg-white/20 p-2"
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-              <div>
-                <h1 className="text-3xl font-bold flex items-center gap-3">
-                  <Clock className="h-8 w-8" />
-                  Subastas Activas
-                </h1>
-                <p className="text-gray-200 mt-2">Gestiona y programa subastas de vehículos</p>
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="flex items-center gap-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold">{auctions?.filter(a => a.activa).length || 0}</div>
-                  <div className="text-sm text-gray-200">Activas</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold">{auctions?.length || 0}</div>
-                  <div className="text-sm text-gray-200">Total</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <AdminHeader 
+        title="Subastas Activas"
+        subtitle="Gestiona y programa subastas de vehículos"
+        stats={headerStats}
+      />
 
       <div className="container py-8">
         {/* Quick Actions */}

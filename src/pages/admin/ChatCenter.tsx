@@ -1,50 +1,26 @@
 
-import { MessageCircle, Users, Clock, ArrowLeft } from 'lucide-react';
+import { MessageCircle, Users, Clock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import Header from '../../components/Header';
+import AdminHeader from '../../components/AdminHeader';
 import ChatCenter from '../../components/ChatCenter';
 
 const AdminChatCenter = () => {
+  const headerStats = [
+    { label: 'Chats Activos', value: 5 },
+    { label: 'Atendidos Hoy', value: 12 },
+    { label: 'Satisfacción', value: '98%' }
+  ];
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <Header />
       
-      {/* Chat Center Header */}
-      <div className="bg-automotive-gradient text-white py-8">
-        <div className="container">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Button
-                onClick={() => window.location.href = '/admin'}
-                variant="ghost"
-                className="text-white hover:bg-white/20 p-2"
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-              <div>
-                <h1 className="text-3xl font-bold flex items-center gap-3">
-                  <MessageCircle className="h-8 w-8" />
-                  Centro de Chat
-                </h1>
-                <p className="text-gray-200 mt-2">Atiende a los clientes en tiempo real</p>
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="flex items-center gap-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold">5</div>
-                  <div className="text-sm text-gray-200">Chats Activos</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold">12</div>
-                  <div className="text-sm text-gray-200">Atendidos Hoy</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <AdminHeader 
+        title="Centro de Chat"
+        subtitle="Atiende a los clientes en tiempo real"
+        stats={headerStats}
+      />
 
       <div className="container py-8">
         {/* Stats Cards */}
