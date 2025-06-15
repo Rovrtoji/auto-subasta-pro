@@ -5,9 +5,8 @@ import { useCreateBid } from '@/hooks/useAuctions';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { DollarSign, Clock } from 'lucide-react';
+import { DollarSign, Clock, User, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Vehicle {
@@ -30,8 +29,6 @@ const BidModal = ({ vehicle, auction, isOpen, onClose }: BidModalProps) => {
   const { user, profile } = useAuth();
   const createBid = useCreateBid();
   const [bidAmount, setBidAmount] = useState('');
-  const [userEmail, setUserEmail] = useState(user?.email || '');
-  const [userName, setUserName] = useState(profile?.nombre || '');
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('es-MX', {
@@ -44,8 +41,13 @@ const BidModal = ({ vehicle, auction, isOpen, onClose }: BidModalProps) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!bidAmount || !userName || !userEmail) {
-      toast.error('Por favor completa todos los campos requeridos');
+    if (!user) {
+      toast.error('Debes iniciar sesión para participar en la subasta');
+      return;
+    }
+
+    if (!bidAmount) {
+      toast.error('Por favor ingresa un monto para tu oferta');
       return;
     }
 
@@ -63,8 +65,8 @@ const BidModal = ({ vehicle, auction, isOpen, onClose }: BidModalProps) => {
     try {
       await createBid.mutateAsync({
         auction_id: auction.id,
-        user_id: user?.id || null,
-        user_name: userName,
+        user_id: user.id,
+        user_name: profile?.nombre || user.email || 'Usuario',
         cantidad: amount,
       });
 
@@ -79,6 +81,34 @@ const BidModal = ({ vehicle, auction, isOpen, onClose }: BidModalProps) => {
 
   const currentPrice = auction?.precio_actual || vehicle.precio;
   const minBid = currentPrice + 1000; // Incremento mínimo de $1,000
+
+  // Si no hay usuario autenticado, mostrar mensaje
+  if (!user) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5 text-automotive-gold" />
+              Iniciar Sesión Requerido
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 text-center">
+            <p className="text-muted-foreground">
+              Debes iniciar sesión para participar en las subastas
+            </p>
+            <Button 
+              onClick={onClose}
+              className="w-full bg-automotive-blue hover:bg-automotive-blue/90"
+            >
+              Entendido
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -121,30 +151,20 @@ const BidModal = ({ vehicle, auction, isOpen, onClose }: BidModalProps) => {
             </div>
           </div>
 
+          {/* Información del usuario (solo lectura) */}
+          <div className="bg-blue-50 p-3 rounded-lg space-y-2">
+            <h4 className="text-sm font-medium text-automotive-blue">Datos del participante:</h4>
+            <div className="flex items-center gap-2 text-sm">
+              <User className="h-4 w-4 text-automotive-blue" />
+              <span>{profile?.nombre || user.email}</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm">
+              <Mail className="h-4 w-4 text-automotive-blue" />
+              <span>{user.email}</span>
+            </div>
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="userName">Nombre *</Label>
-              <Input
-                id="userName"
-                value={userName}
-                onChange={(e) => setUserName(e.target.value)}
-                placeholder="Tu nombre completo"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="userEmail">Email *</Label>
-              <Input
-                id="userEmail"
-                type="email"
-                value={userEmail}
-                onChange={(e) => setUserEmail(e.target.value)}
-                placeholder="tu@email.com"
-                required
-              />
-            </div>
-
             <div className="space-y-2">
               <Label htmlFor="bidAmount">Tu oferta (MXN) *</Label>
               <Input
@@ -156,6 +176,7 @@ const BidModal = ({ vehicle, auction, isOpen, onClose }: BidModalProps) => {
                 min={minBid}
                 step="1000"
                 required
+                className="text-lg font-semibold"
               />
               <p className="text-xs text-muted-foreground">
                 Tu oferta debe ser mayor a {formatPrice(currentPrice)}
@@ -177,7 +198,7 @@ const BidModal = ({ vehicle, auction, isOpen, onClose }: BidModalProps) => {
                 disabled={createBid.isPending}
               >
                 <DollarSign className="h-4 w-4 mr-2" />
-                {createBid.isPending ? 'Enviando...' : 'Enviar Oferta'}
+                {createBid.isPending ? 'Enviando...' : 'Pujar'}
               </Button>
             </div>
           </form>
