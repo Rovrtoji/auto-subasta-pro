@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { MessageCircle, Send, Users, Clock, CheckCircle2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,39 +8,34 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useChat } from '@/contexts/ChatContext';
 
 const ChatCenter = () => {
-  const { state, dispatch } = useChat();
+  const { state, dispatch, refreshRooms, refreshMessages, sendMessage } = useChat();
   const [message, setMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Al seleccionar un room, cargar sus mensajes de Supabase
+  useEffect(() => {
+    if (state.selectedRoom) {
+      refreshMessages(state.selectedRoom);
+    }
+  }, [state.selectedRoom, refreshMessages]);
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [state.rooms, state.selectedRoom]);
+  }, [state.messages, state.selectedRoom]);
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!message.trim() || !state.selectedRoom) return;
-
     const selectedRoomData = state.rooms.find(room => room.id === state.selectedRoom);
     if (!selectedRoomData) return;
 
-    dispatch({
-      type: 'ADD_MESSAGE',
-      payload: {
-        roomId: state.selectedRoom,
-        message: {
-          text: message,
-          sender: 'admin',
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          clientName: selectedRoomData.clientName
-        }
-      }
-    });
-
+    await sendMessage(state.selectedRoom, message, 'admin', selectedRoomData.clientName);
     setMessage('');
+    await refreshMessages(state.selectedRoom);
   };
 
-  const handleRoomSelect = (roomId: number) => {
+  const handleRoomSelect = (roomId: string) => {
     dispatch({ type: 'SELECT_ROOM', payload: roomId });
-    dispatch({ type: 'MARK_ROOM_READ', payload: roomId });
+    refreshMessages(roomId);
   };
 
   const handleMarkResolved = () => {
@@ -75,7 +69,7 @@ const ChatCenter = () => {
   };
 
   const selectedRoomData = state.rooms.find(room => room.id === state.selectedRoom);
-  const currentMessages = selectedRoomData?.messages || [];
+  const currentMessages = state.messages || [];
 
   return (
     <div className="h-[600px] flex border rounded-lg overflow-hidden bg-white shadow-lg">

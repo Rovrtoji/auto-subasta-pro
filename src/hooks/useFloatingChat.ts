@@ -1,72 +1,46 @@
-
 import { useState, useRef, useEffect } from 'react';
 import { useChat } from '@/contexts/ChatContext';
 
 export const useFloatingChat = () => {
-  const { state, dispatch } = useChat();
+  const { state, dispatch, refreshRooms, refreshMessages, createRoom, sendMessage } = useChat();
   const [message, setMessage] = useState('');
   const [clientName, setClientName] = useState('');
   const [step, setStep] = useState<'name' | 'chat'>('name');
-  const [localRoomId, setLocalRoomId] = useState<number | null>(null);
+  const [currentRoomId, setCurrentRoomId] = useState<string | null>(null);
 
-  // Ref to avoid duplicate effect triggers
-  const justCreatedRoom = useRef(false);
-
-  const handleStartChat = () => {
-    if (!clientName.trim()) return;
-    const existingRoom = state.rooms.find(room => room.clientName === clientName);
-    if (!existingRoom) {
-      justCreatedRoom.current = true;
-      dispatch({
-        type: 'CREATE_ROOM',
-        payload: {
-          clientName: clientName,
-          initialMessage: `Hola, soy ${clientName}. ¿Podrían ayudarme?`
-        }
-      });
-    } else {
-      setLocalRoomId(existingRoom.id);
-      dispatch({ type: 'SELECT_ROOM', payload: existingRoom.id });
-    }
-    setStep('chat');
-  };
-
+  // Al iniciar, buscar si hay un room para el cliente actual
   useEffect(() => {
     if (!clientName) return;
     const foundRoom = state.rooms.find(room => room.clientName === clientName);
-    if (foundRoom && (localRoomId !== foundRoom.id)) {
-      setLocalRoomId(foundRoom.id);
+    if (foundRoom) {
+      setCurrentRoomId(foundRoom.id);
       dispatch({ type: 'SELECT_ROOM', payload: foundRoom.id });
-      if (justCreatedRoom.current) justCreatedRoom.current = false;
+      refreshMessages(foundRoom.id);
+      setStep('chat');
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.rooms, clientName]);
+  // eslint-disable-next-line
+  }, [clientName, state.rooms]);
 
-  useEffect(() => {
-    if (localRoomId && state.selectedRoom !== localRoomId) {
-      dispatch({ type: 'SELECT_ROOM', payload: localRoomId });
+  // Cuando selecciono un room en el chat flotante (nuevo)
+  const handleStartChat = async () => {
+    if (!clientName.trim()) return;
+    let room = state.rooms.find(room => room.clientName === clientName);
+    if (!room) {
+      room = await createRoom(clientName);
+      await sendMessage(room.id, `Hola, soy ${clientName}. ¿Podrían ayudarme?`, 'client', clientName);
     }
-  }, [localRoomId, state.selectedRoom, dispatch]);
+    setCurrentRoomId(room.id);
+    dispatch({ type: 'SELECT_ROOM', payload: room.id });
+    await refreshMessages(room.id);
+    setStep('chat');
+  };
 
-  const handleSendMessage = () => {
-    if (!message.trim() || !clientName) return;
-    const currRoom = state.rooms.find(room => room.clientName === clientName);
-    if (currRoom) {
-      dispatch({
-        type: 'ADD_MESSAGE',
-        payload: {
-          roomId: currRoom.id,
-          message: {
-            text: message,
-            sender: 'client',
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            clientName: clientName
-          }
-        }
-      });
-      setLocalRoomId(currRoom.id);
-    }
+  // Enviar mensaje en el chat flotante
+  const handleSendMessage = async () => {
+    if (!message.trim() || !clientName || !currentRoomId) return;
+    await sendMessage(currentRoomId, message, 'client', clientName);
     setMessage('');
+    await refreshMessages(currentRoomId);
   };
 
   const handleClose = () => {
@@ -77,19 +51,18 @@ export const useFloatingChat = () => {
     setStep('name');
     setClientName('');
     setMessage('');
-    setLocalRoomId(null);
+    setCurrentRoomId(null);
     dispatch({ type: 'TOGGLE_FLOATING_CHAT', payload: false });
   };
 
-  const currentMessages = localRoomId
-    ? state.rooms.find(room => room.id === localRoomId)?.messages || []
-    : [];
+  // Los mensajes actuales del room activo
+  const currentMessages = state.messages;
 
-  const totalUnreadCount = state.rooms.reduce((total, room) => total + room.unreadCount, 0);
+  // Unread count: for now always empty, could add with extra supabase column if desired
 
   return {
     state,
-    dispatch, // <-- Return dispatch here!
+    dispatch,
     step,
     message,
     setMessage,
@@ -100,7 +73,7 @@ export const useFloatingChat = () => {
     handleClose,
     handleReset,
     currentMessages,
-    totalUnreadCount,
+    totalUnreadCount: 0, // para futura mejora
     setStep
   };
 };

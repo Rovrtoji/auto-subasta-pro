@@ -144,6 +144,59 @@ export type Database = {
           },
         ]
       }
+      chat_messages: {
+        Row: {
+          client_name: string
+          id: string
+          room_id: string | null
+          sender: string
+          text: string
+          timestamp: string
+        }
+        Insert: {
+          client_name: string
+          id?: string
+          room_id?: string | null
+          sender: string
+          text: string
+          timestamp?: string
+        }
+        Update: {
+          client_name?: string
+          id?: string
+          room_id?: string | null
+          sender?: string
+          text?: string
+          timestamp?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "chat_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_rooms: {
+        Row: {
+          client_name: string
+          created_at: string | null
+          id: string
+        }
+        Insert: {
+          client_name: string
+          created_at?: string | null
+          id?: string
+        }
+        Update: {
+          client_name?: string
+          created_at?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
       offers: {
         Row: {
           created_at: string
