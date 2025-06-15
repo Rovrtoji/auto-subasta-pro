@@ -8,14 +8,16 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import Header from '../../components/Header';
+import VehicleForm from '../../components/VehicleForm';
 import { useVehicles } from '@/hooks/useVehicles';
 
 const AdminInventory = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [selectedVehicle, setSelectedVehicle] = useState<any>(null);
+  const [showCreateForm, setShowCreateForm] = useState(false);
   
-  const { data: vehicles, isLoading } = useVehicles();
+  const { data: vehicles, isLoading, refetch } = useVehicles();
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('es-MX', {
@@ -47,6 +49,10 @@ const AdminInventory = () => {
       return <Badge className="bg-red-500">En Subasta</Badge>;
     }
     return <Badge className="bg-green-500">Disponible</Badge>;
+  };
+
+  const handleCreateSuccess = () => {
+    refetch();
   };
 
   if (isLoading) {
@@ -103,7 +109,10 @@ const AdminInventory = () => {
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>Filtros y Búsqueda</span>
-              <Button className="btn-premium">
+              <Button 
+                className="btn-premium"
+                onClick={() => setShowCreateForm(true)}
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Agregar Vehículo
               </Button>
@@ -282,6 +291,16 @@ const AdminInventory = () => {
               )}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Vehicle Modal */}
+      <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <VehicleForm 
+            onClose={() => setShowCreateForm(false)} 
+            onSuccess={handleCreateSuccess}
+          />
         </DialogContent>
       </Dialog>
     </div>
