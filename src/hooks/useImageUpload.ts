@@ -53,7 +53,19 @@ export const useImageUpload = () => {
         .from('vehicle-images')
         .getPublicUrl(filePath);
 
-      console.log('Public URL:', data.publicUrl);
+      console.log('Public URL generated:', data.publicUrl);
+
+      // Verificar que la imagen se puede acceder
+      try {
+        const response = await fetch(data.publicUrl, { method: 'HEAD' });
+        if (!response.ok) {
+          console.error('Image not accessible at URL:', data.publicUrl);
+          throw new Error('Imagen subida pero no accesible');
+        }
+      } catch (fetchError) {
+        console.error('Error verifying image URL:', fetchError);
+        // Continuar de todas formas, puede ser un problema temporal
+      }
 
       setUploadProgress(100);
       toast.success('Imagen subida exitosamente');
@@ -73,6 +85,7 @@ export const useImageUpload = () => {
     const urls: string[] = [];
     
     for (let i = 0; i < files.length; i++) {
+      setUploadProgress((i / files.length) * 100);
       const url = await uploadImage(files[i]);
       if (url) {
         urls.push(url);

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Clock, ArrowLeft, Plus, Calendar, DollarSign, Users, Eye, Edit, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -88,6 +87,10 @@ const AdminActiveAuctions = () => {
   const availableVehicles = vehicles?.filter(vehicle => 
     !vehicle.apartado && !vehicle.en_subasta
   ) || [];
+
+  console.log('Total vehicles:', vehicles?.length);
+  console.log('Available vehicles for auction:', availableVehicles.length);
+  console.log('Vehicles in auction:', vehicles?.filter(v => v.en_subasta).length);
 
   const handleCreateAuction = async () => {
     if (!newAuction.vehicleId || !newAuction.precioInicial || !newAuction.fechaInicio || !newAuction.fechaFin || !newAuction.horaInicio || !newAuction.horaFin) {
@@ -193,14 +196,19 @@ const AdminActiveAuctions = () => {
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>Gestión de Subastas</span>
-              <Button 
-                onClick={() => setShowCreateModal(true)}
-                className="btn-premium"
-                disabled={availableVehicles.length === 0}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Nueva Subasta
-              </Button>
+              <div className="flex items-center gap-2">
+                <div className="text-sm text-muted-foreground">
+                  Vehículos disponibles: {availableVehicles.length}
+                </div>
+                <Button 
+                  onClick={() => setShowCreateModal(true)}
+                  className="btn-premium"
+                  disabled={availableVehicles.length === 0}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nueva Subasta
+                </Button>
+              </div>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -276,14 +284,19 @@ const AdminActiveAuctions = () => {
               <TableBody>
                 {auctions?.map((auction) => {
                   const vehicle = auction.vehicles;
+                  const imageUrl = vehicle?.imagen || vehicle?.imagenes?.[0] || '/placeholder.svg';
                   return (
                     <TableRow key={auction.id}>
                       <TableCell>
                         <div className="flex items-center space-x-3">
                           <img
-                            src={vehicle?.imagen || '/placeholder.svg'}
+                            src={imageUrl}
                             alt={`${vehicle?.marca} ${vehicle?.modelo}`}
                             className="w-12 h-12 object-cover rounded-lg"
+                            onError={(e) => {
+                              console.log('Image failed to load:', imageUrl);
+                              e.currentTarget.src = '/placeholder.svg';
+                            }}
                           />
                           <div>
                             <p className="font-semibold">
@@ -499,9 +512,12 @@ const AdminActiveAuctions = () => {
               <div className="grid grid-cols-2 gap-6">
                 <div>
                   <img
-                    src={selectedAuction.vehicles?.imagen || '/placeholder.svg'}
+                    src={selectedAuction.vehicles?.imagen || selectedAuction.vehicles?.imagenes?.[0] || '/placeholder.svg'}
                     alt={`${selectedAuction.vehicles?.marca} ${selectedAuction.vehicles?.modelo}`}
                     className="w-full h-48 object-cover rounded-lg"
+                    onError={(e) => {
+                      e.currentTarget.src = '/placeholder.svg';
+                    }}
                   />
                 </div>
                 <div className="space-y-4">

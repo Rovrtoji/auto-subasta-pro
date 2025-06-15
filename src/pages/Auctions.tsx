@@ -67,6 +67,14 @@ const Auctions = () => {
     );
   }
 
+  // Debug de subastas
+  console.log('Auctions loaded:', auctions.length);
+  auctions.forEach(auction => {
+    console.log('Auction:', auction.id, 'Vehicle:', auction.vehicles?.marca, auction.vehicles?.modelo);
+    console.log('Image URL:', auction.vehicles?.imagen);
+    console.log('Images array:', auction.vehicles?.imagenes);
+  });
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
@@ -132,60 +140,71 @@ const Auctions = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-            {auctions.map((auction) => (
-              <Card key={auction.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                <div className="relative">
-                  <img
-                    src={auction.vehicles?.imagen || '/placeholder.svg'}
-                    alt={`${auction.vehicles?.marca} ${auction.vehicles?.modelo}`}
-                    className="w-full h-48 object-cover"
-                  />
-                  <Badge className="absolute top-2 right-2 bg-red-500">
-                    Subasta
-                  </Badge>
-                </div>
-                
-                <CardContent className="p-4">
-                  <h3 className="text-lg font-semibold mb-2">
-                    {auction.vehicles?.marca} {auction.vehicles?.modelo} {auction.vehicles?.año}
-                  </h3>
-                  
-                  <div className="space-y-2 mb-4">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Precio inicial:</span>
-                      <span className="font-medium">
-                        {formatPrice(auction.precio_inicial)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Puja actual:</span>
-                      <span className="font-bold text-green-600">
-                        {formatPrice(auction.precio_actual)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Participantes:</span>
-                      <span>{auction.participantes?.length || 0}</span>
-                    </div>
+            {auctions.map((auction) => {
+              // Mejorar manejo de imágenes
+              const imageUrl = auction.vehicles?.imagen || 
+                             auction.vehicles?.imagenes?.[0] || 
+                             '/placeholder.svg';
+              
+              return (
+                <Card key={auction.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                  <div className="relative">
+                    <img
+                      src={imageUrl}
+                      alt={`${auction.vehicles?.marca} ${auction.vehicles?.modelo}`}
+                      className="w-full h-48 object-cover"
+                      onError={(e) => {
+                        console.log('Image failed to load:', imageUrl);
+                        e.currentTarget.src = '/placeholder.svg';
+                      }}
+                    />
+                    <Badge className="absolute top-2 right-2 bg-red-500">
+                      Subasta
+                    </Badge>
                   </div>
+                  
+                  <CardContent className="p-4">
+                    <h3 className="text-lg font-semibold mb-2">
+                      {auction.vehicles?.marca} {auction.vehicles?.modelo} {auction.vehicles?.año}
+                    </h3>
+                    
+                    <div className="space-y-2 mb-4">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Precio inicial:</span>
+                        <span className="font-medium">
+                          {formatPrice(auction.precio_inicial)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Puja actual:</span>
+                        <span className="font-bold text-green-600">
+                          {formatPrice(auction.precio_actual)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Participantes:</span>
+                        <span>{auction.participantes?.length || 0}</span>
+                      </div>
+                    </div>
 
-                  <AuctionTimer endTime={new Date(auction.fecha_fin)} />
-                  
-                  <div className="mt-4 flex gap-2">
-                    <Button 
-                      onClick={() => setSelectedAuction(auction)}
-                      className="flex-1 bg-automotive-blue hover:bg-automotive-blue/90"
-                    >
-                      <DollarSign className="h-4 w-4 mr-2" />
-                      Pujar
-                    </Button>
-                    <Button variant="outline" className="flex-1">
-                      Ver Detalles
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                    <AuctionTimer endTime={new Date(auction.fecha_fin)} />
+                    
+                    <div className="mt-4 flex gap-2">
+                      <Button 
+                        onClick={() => setSelectedAuction(auction)}
+                        className="flex-1 bg-automotive-blue hover:bg-automotive-blue/90"
+                      >
+                        <DollarSign className="h-4 w-4 mr-2" />
+                        Pujar
+                      </Button>
+                      <Button variant="outline" className="flex-1">
+                        Ver Detalles
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         )}
       </div>
