@@ -8,7 +8,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -18,6 +17,8 @@ import { cn } from '@/lib/utils';
 import Header from '../../components/Header';
 import { useAuctions } from '@/hooks/useAuctions';
 import { useVehicles } from '@/hooks/useVehicles';
+import { useCreateAuction } from '@/hooks/useCreateAuction';
+import { toast } from 'sonner';
 
 const AdminActiveAuctions = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -33,6 +34,7 @@ const AdminActiveAuctions = () => {
 
   const { data: auctions, isLoading: auctionsLoading } = useAuctions();
   const { data: vehicles, isLoading: vehiclesLoading } = useVehicles();
+  const createAuction = useCreateAuction();
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('es-MX', {
@@ -82,22 +84,51 @@ const AdminActiveAuctions = () => {
     }
   };
 
+  // Filtrar vehículos disponibles para subasta (no apartados y no en subasta)
   const availableVehicles = vehicles?.filter(vehicle => 
     !vehicle.apartado && !vehicle.en_subasta
   ) || [];
 
-  const handleCreateAuction = () => {
-    // TODO: Implementar creación de subasta
-    console.log('Creating auction:', newAuction);
-    setShowCreateModal(false);
-    setNewAuction({
-      vehicleId: '',
-      precioInicial: '',
-      fechaInicio: undefined,
-      horaInicio: '',
-      fechaFin: undefined,
-      horaFin: ''
-    });
+  const handleCreateAuction = async () => {
+    if (!newAuction.vehicleId || !newAuction.precioInicial || !newAuction.fechaInicio || !newAuction.fechaFin || !newAuction.horaInicio || !newAuction.horaFin) {
+      toast.error('Por favor completa todos los campos');
+      return;
+    }
+
+    // Combinar fecha y hora
+    const fechaInicio = new Date(newAuction.fechaInicio);
+    const [horasInicio, minutosInicio] = newAuction.horaInicio.split(':');
+    fechaInicio.setHours(parseInt(horasInicio), parseInt(minutosInicio));
+
+    const fechaFin = new Date(newAuction.fechaFin);
+    const [horasFin, minutosFin] = newAuction.horaFin.split(':');
+    fechaFin.setHours(parseInt(horasFin), parseInt(minutosFin));
+
+    if (fechaFin <= fechaInicio) {
+      toast.error('La fecha de fin debe ser posterior a la fecha de inicio');
+      return;
+    }
+
+    try {
+      await createAuction.mutateAsync({
+        vehicleId: newAuction.vehicleId,
+        precioInicial: parseFloat(newAuction.precioInicial),
+        fechaInicio,
+        fechaFin
+      });
+
+      setShowCreateModal(false);
+      setNewAuction({
+        vehicleId: '',
+        precioInicial: '',
+        fechaInicio: undefined,
+        horaInicio: '',
+        fechaFin: undefined,
+        horaFin: ''
+      });
+    } catch (error) {
+      console.error('Error creating auction:', error);
+    }
   };
 
   if (auctionsLoading || vehiclesLoading) {
@@ -165,6 +196,7 @@ const AdminActiveAuctions = () => {
               <Button 
                 onClick={() => setShowCreateModal(true)}
                 className="btn-premium"
+                disabled={availableVehicles.length === 0}
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Nueva Subasta
@@ -211,6 +243,13 @@ const AdminActiveAuctions = () => {
                 <div className="text-sm text-muted-foreground">Vehículos Disponibles</div>
               </Card>
             </div>
+            {availableVehicles.length === 0 && (
+              <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-sm text-yellow-800">
+                  No hay vehículos disponibles para crear subastas. Todos los vehículos están apartados o ya en subasta.
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -329,7 +368,7 @@ const AdminActiveAuctions = () => {
                   <SelectContent>
                     {availableVehicles.map((vehicle) => (
                       <SelectItem key={vehicle.id} value={vehicle.id}>
-                        {vehicle.marca} {vehicle.modelo} {vehicle.año}
+                        {vehicle.marca} {vehicle.modelo} {vehicle.año} - {formatPrice(vehicle.precio)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -437,8 +476,12 @@ const AdminActiveAuctions = () => {
               <Button variant="outline" onClick={() => setShowCreateModal(false)}>
                 Cancelar
               </Button>
-              <Button onClick={handleCreateAuction} className="btn-premium">
-                Crear Subasta
+              <Button 
+                onClick={handleCreateAuction} 
+                className="btn-premium"
+                disabled={createAuction.isPending}
+              >
+                {createAuction.isPending ? 'Creando...' : 'Crear Subasta'}
               </Button>
             </div>
           </div>

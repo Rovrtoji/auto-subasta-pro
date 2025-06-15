@@ -1,15 +1,60 @@
 
 import { useState, useEffect } from 'react';
 import { useAuctions } from '@/hooks/useAuctions';
+import { useCreateBid } from '@/hooks/useAuctions';
 import Header from '@/components/Header';
 import VehicleCard from '@/components/VehicleCard';
 import AuctionTimer from '@/components/AuctionTimer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Users, TrendingUp } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Clock, Users, TrendingUp, DollarSign } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { toast } from 'sonner';
 
 const Auctions = () => {
   const { data: auctions = [], isLoading } = useAuctions();
+  const createBid = useCreateBid();
+  const [selectedAuction, setSelectedAuction] = useState<any>(null);
+  const [bidAmount, setBidAmount] = useState('');
+
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('es-MX', {
+      style: 'currency',
+      currency: 'MXN',
+      maximumFractionDigits: 0
+    }).format(price);
+  };
+
+  const handlePlaceBid = async () => {
+    if (!selectedAuction || !bidAmount) {
+      toast.error('Por favor ingresa un monto válido');
+      return;
+    }
+
+    const amount = parseFloat(bidAmount);
+    if (amount <= selectedAuction.precio_actual) {
+      toast.error(`La puja debe ser mayor a ${formatPrice(selectedAuction.precio_actual)}`);
+      return;
+    }
+
+    try {
+      await createBid.mutateAsync({
+        auction_id: selectedAuction.id,
+        cantidad: amount,
+        user_id: 'temp-user-id', // TODO: Replace with actual user ID when auth is implemented
+        user_name: 'Usuario Anónimo', // TODO: Replace with actual user name
+      });
+      
+      toast.success('¡Puja realizada exitosamente!');
+      setSelectedAuction(null);
+      setBidAmount('');
+    } catch (error) {
+      console.error('Error placing bid:', error);
+      toast.error('Error al realizar la puja');
+    }
+  };
 
   if (isLoading) {
     return (
@@ -88,7 +133,7 @@ const Auctions = () => {
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
             {auctions.map((auction) => (
-              <Card key={auction.id} className="overflow-hidden">
+              <Card key={auction.id} className="overflow-hidden hover:shadow-lg transition-shadow">
                 <div className="relative">
                   <img
                     src={auction.vehicles?.imagen || '/placeholder.svg'}
@@ -109,13 +154,13 @@ const Auctions = () => {
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Precio inicial:</span>
                       <span className="font-medium">
-                        ${Number(auction.precio_inicial).toLocaleString()}
+                        {formatPrice(auction.precio_inicial)}
                       </span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Puja actual:</span>
                       <span className="font-bold text-green-600">
-                        ${Number(auction.precio_actual).toLocaleString()}
+                        {formatPrice(auction.precio_actual)}
                       </span>
                     </div>
                     <div className="flex justify-between text-sm">
@@ -125,12 +170,85 @@ const Auctions = () => {
                   </div>
 
                   <AuctionTimer endTime={new Date(auction.fecha_fin)} />
+                  
+                  <div className="mt-4 flex gap-2">
+                    <Button 
+                      onClick={() => setSelectedAuction(auction)}
+                      className="flex-1 bg-automotive-blue hover:bg-automotive-blue/90"
+                    >
+                      <DollarSign className="h-4 w-4 mr-2" />
+                      Pujar
+                    </Button>
+                    <Button variant="outline" className="flex-1">
+                      Ver Detalles
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             ))}
           </div>
         )}
       </div>
+
+      {/* Bid Modal */}
+      <Dialog open={!!selectedAuction} onOpenChange={() => setSelectedAuction(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Realizar Puja</DialogTitle>
+          </DialogHeader>
+          {selectedAuction && (
+            <div className="space-y-4">
+              <div className="text-center">
+                <h3 className="text-lg font-semibold">
+                  {selectedAuction.vehicles?.marca} {selectedAuction.vehicles?.modelo}
+                </h3>
+                <p className="text-muted-foreground">{selectedAuction.vehicles?.año}</p>
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span>Puja actual:</span>
+                  <span className="font-bold text-green-600">
+                    {formatPrice(selectedAuction.precio_actual)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm text-muted-foreground">
+                  <span>Mínimo siguiente:</span>
+                  <span>{formatPrice(selectedAuction.precio_actual + 1000)}</span>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Tu puja (MXN)</label>
+                <Input
+                  type="number"
+                  placeholder={`Mínimo ${selectedAuction.precio_actual + 1000}`}
+                  value={bidAmount}
+                  onChange={(e) => setBidAmount(e.target.value)}
+                  min={selectedAuction.precio_actual + 1000}
+                />
+              </div>
+
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={() => setSelectedAuction(null)}
+                >
+                  Cancelar
+                </Button>
+                <Button 
+                  className="flex-1 bg-automotive-blue hover:bg-automotive-blue/90"
+                  onClick={handlePlaceBid}
+                  disabled={createBid.isPending}
+                >
+                  {createBid.isPending ? 'Pujando...' : 'Confirmar Puja'}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
