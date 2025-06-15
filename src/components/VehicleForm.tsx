@@ -9,6 +9,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 import { useCreateVehicle } from '@/hooks/useVehicles';
 import { useImageUpload } from '@/hooks/useImageUpload';
 import ImageUploader from '@/components/ImageUploader';
@@ -26,6 +28,9 @@ const vehicleSchema = z.object({
   color: z.string().min(1, 'El color es requerido'),
   estado_general: z.string().min(1, 'El estado general es requerido'),
   descripcion: z.string().optional(),
+  tipo_venta: z.enum(['venta_directa', 'subasta'], {
+    required_error: 'Debes seleccionar el tipo de venta',
+  }),
 });
 
 type VehicleFormData = z.infer<typeof vehicleSchema>;
@@ -53,11 +58,15 @@ const VehicleForm = ({ onClose, onSuccess }: VehicleFormProps) => {
       color: '',
       estado_general: 'Bueno',
       descripcion: '',
+      tipo_venta: 'venta_directa',
     },
   });
 
   const onSubmit = async (data: VehicleFormData) => {
     try {
+      // Determinar si va en subasta o no según el tipo de venta
+      const enSubasta = data.tipo_venta === 'subasta';
+      
       // Asegurar que todos los campos requeridos están presentes
       const vehicleData = {
         marca: data.marca,
@@ -70,6 +79,8 @@ const VehicleForm = ({ onClose, onSuccess }: VehicleFormProps) => {
         color: data.color,
         estado_general: data.estado_general,
         descripcion: data.descripcion || '',
+        en_subasta: enSubasta,
+        apartado: false,
         imageUrls: uploadedImages,
       };
 
@@ -96,6 +107,34 @@ const VehicleForm = ({ onClose, onSuccess }: VehicleFormProps) => {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {/* Tipo de Venta */}
+            <FormField
+              control={form.control}
+              name="tipo_venta"
+              render={({ field }) => (
+                <FormItem className="space-y-3">
+                  <FormLabel>Tipo de Venta</FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      className="flex flex-col space-y-1"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="venta_directa" id="venta_directa" />
+                        <Label htmlFor="venta_directa">Venta Directa</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="subasta" id="subasta" />
+                        <Label htmlFor="subasta">Subasta</Label>
+                      </div>
+                    </RadioGroup>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -289,6 +328,11 @@ const VehicleForm = ({ onClose, onSuccess }: VehicleFormProps) => {
                 onImagesChange={handleImagesChange}
                 maxImages={5}
               />
+              {uploadedImages.length > 0 && (
+                <p className="text-sm text-gray-600 mt-2">
+                  {uploadedImages.length} imagen(es) subida(s)
+                </p>
+              )}
             </div>
 
             <div className="flex gap-3 justify-end">
