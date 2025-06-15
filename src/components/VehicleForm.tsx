@@ -11,7 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useCreateVehicle } from '@/hooks/useVehicles';
 import { useImageUpload } from '@/hooks/useImageUpload';
-import { ImageUploader } from '@/components/ImageUploader';
+import ImageUploader from '@/components/ImageUploader';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 
@@ -58,10 +58,22 @@ const VehicleForm = ({ onClose, onSuccess }: VehicleFormProps) => {
 
   const onSubmit = async (data: VehicleFormData) => {
     try {
-      await createVehicle.mutateAsync({
-        ...data,
+      // Asegurar que todos los campos requeridos están presentes
+      const vehicleData = {
+        marca: data.marca,
+        modelo: data.modelo,
+        año: data.año,
+        kilometraje: data.kilometraje,
+        precio: data.precio,
+        transmision: data.transmision,
+        combustible: data.combustible,
+        color: data.color,
+        estado_general: data.estado_general,
+        descripcion: data.descripcion || '',
         imageUrls: uploadedImages,
-      });
+      };
+
+      await createVehicle.mutateAsync(vehicleData);
       
       toast.success('Vehículo creado exitosamente');
       onSuccess?.();
@@ -72,8 +84,8 @@ const VehicleForm = ({ onClose, onSuccess }: VehicleFormProps) => {
     }
   };
 
-  const handleImagesUploaded = (urls: string[]) => {
-    setUploadedImages(urls);
+  const handleImagesChange = (images: string[]) => {
+    setUploadedImages(images);
   };
 
   return (
@@ -123,7 +135,7 @@ const VehicleForm = ({ onClose, onSuccess }: VehicleFormProps) => {
                       <Input 
                         type="number" 
                         {...field} 
-                        onChange={(e) => field.onChange(parseInt(e.target.value))}
+                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
                       />
                     </FormControl>
                     <FormMessage />
@@ -141,7 +153,7 @@ const VehicleForm = ({ onClose, onSuccess }: VehicleFormProps) => {
                       <Input 
                         type="number" 
                         {...field} 
-                        onChange={(e) => field.onChange(parseInt(e.target.value))}
+                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
                       />
                     </FormControl>
                     <FormMessage />
@@ -159,7 +171,7 @@ const VehicleForm = ({ onClose, onSuccess }: VehicleFormProps) => {
                       <Input 
                         type="number" 
                         {...field} 
-                        onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                       />
                     </FormControl>
                     <FormMessage />
@@ -273,9 +285,9 @@ const VehicleForm = ({ onClose, onSuccess }: VehicleFormProps) => {
             <div>
               <label className="block text-sm font-medium mb-2">Imágenes del Vehículo</label>
               <ImageUploader
-                onImagesUploaded={handleImagesUploaded}
+                images={uploadedImages}
+                onImagesChange={handleImagesChange}
                 maxImages={5}
-                disabled={isUploading}
               />
             </div>
 
